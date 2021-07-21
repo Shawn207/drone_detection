@@ -43,13 +43,29 @@ class UVtracker
     vector<vector<Point2f> > now_history; 
     vector<kalman_filter> pre_filter; // states includes x, y, vx, vy, width, depth
     vector<kalman_filter> now_filter;
+    vector<Rect> now_bb_D; // depth bbox
+    vector<box3D> now_box_3D;
+    deque<deque<box3D>> now_box_3D_history; // 3D bbox history 
+    deque<deque<box3D>> pre_box_3D_history;
     float overlap_threshold; // threshold to determind tracked or not
+
+    // track the sum of widths on x,y,z direction of each box
+    vector<float> x_width_sum;
+    vector<float> y_width_sum;
+    vector<float> z_width_sum;
+
+    // store the fixed size of each box if it keep showing fully in FOV
+    vector<box3D> fixed_box3D;
+
+    // flag to fix box size
+    vector<bool> pre_fix;
+    vector<bool> now_fix;
 
     // constructor
     UVtracker();
 
     // read new bounding box information
-    void read_bb(vector<Rect> now_bb);
+    void read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D> &box_3D);
 
     // check tracking status
     void check_status();
@@ -79,7 +95,7 @@ class UVdetector
     vector<Rect> bounding_box_D; // bounding boxes on the depth map (not resized)
     // main output/topic published
     vector<box3D> box3Ds; // 3D bounding boxes in world frame for output
-    vector<box3D> person_box3Ds;// 3D bboxes in world frame for persons
+    // vector<box3D> person_box3Ds;// 3D bboxes in world frame for persons
     
     // x,y coords of topleft corner of incoming crop from yolo
     int x0;

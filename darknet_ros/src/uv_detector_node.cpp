@@ -18,6 +18,7 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf/transform_listener.h>
 // #include <librealsense2/rs.hpp>
 
 #include "darknet_ros_msgs/BoundingBox3D.h"
@@ -57,7 +58,7 @@ class my_detector
 			// Topic published
 			marker_pub = nh.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1);
 			bboxes_pub = nh.advertise<darknet_ros_msgs::BoundingBox3DArray>("Bounding_Box3D", 1);
-			person_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("person_visualization_marker", 1);
+			box_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("box_visualization_marker", 1);
 			// obstacles = n.advertise<std_msgs::Float64MultiArray>("Obstacles", 1000); // working on
 
 		}  
@@ -93,7 +94,7 @@ class my_detector
 			return;
 			}
 			
-			this->point_camera.header.frame_id = "camera";
+			this->point_camera.header.frame_id = "camera_link";
 			this->point_camera.header.stamp = ros::Time::now();
 
 			cv::Mat depth = cv_ptr->image;
@@ -105,11 +106,12 @@ class my_detector
 
 			this->uv_detector.readdata(depthq);
 			this->uv_detector.detect();
-			this->uv_detector.track();
-			this->uv_detector.display_U_map();
+			
+			// this->uv_detector.display_U_map();
 			// this->uv_detector.display_bird_view();
 			this->uv_detector.extract_3Dbox();
-			this->uv_detector.display_depth();
+			this->uv_detector.track();
+			// this->uv_detector.display_depth();
 
 			
 // // point coordinate
@@ -132,7 +134,7 @@ class my_detector
 			// visualization using bounding boxes
 			visualization_msgs::Marker line;
 			visualization_msgs::MarkerArray lines;
-			line.header.frame_id = "world";
+			line.header.frame_id = "map";
 			line.type = visualization_msgs::Marker::LINE_LIST;
 			line.action = visualization_msgs::Marker::ADD;
 			
@@ -147,7 +149,7 @@ class my_detector
 			darknet_ros_msgs::BoundingBox3D BBox;
 			darknet_ros_msgs::BoundingBox3DArray BBoxes;
 			BBoxes.header.stamp = ros::Time::now();
-			BBoxes.header.frame_id = 'world';
+			BBoxes.header.frame_id = 'map';
 
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
 				
@@ -160,87 +162,60 @@ class my_detector
 				float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
 				float y_width = uv_detector.box3Ds[i].y_width / 1000.;
 				float z_width = uv_detector.box3Ds[i].z_width / 1000.;
-
-				// vector<geometry_msgs::Point> verts;
-				// geometry_msgs::Point p;
-				// // vertice 0
-				// p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-				// verts.push_back(p);
-				// // vertice 1
-				// p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-				// verts.push_back(p);
-				// // vertice 2
-				// p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-				// verts.push_back(p);
-				// // vertice 3
-				// p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-				// verts.push_back(p);
-				// // vertice 4
-				// p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-				// verts.push_back(p);
-				// // vertice 5
-				// p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-				// verts.push_back(p);
-				// // vertice 6
-				// p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-				// verts.push_back(p);
-				// // vertice 7
-				// p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-				// verts.push_back(p);
 				
 				vector<geometry_msgs::Point> verts;
 				geometry_msgs::Point p;
 				// vertice 0
 				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				while (!tfBuffer.canTransform("world","camera",point_camera.header.stamp,ros::Duration(5.0))){
+				while (!tfBuffer.canTransform("map","camera_link",point_camera.header.stamp,ros::Duration(5.0))){
 				ROS_INFO("waiting for transform");
 				}
 				// ROS_INFO("transform is ready!!");
 
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera, "map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 1
 				p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera, "map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 2
 				p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera, "map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 3
 				p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera, "map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 4
 				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera, "map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 5
 				p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera, "map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 6
 				p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera,"map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 7
 				p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				point_world = tfBuffer.transform(point_camera, "world");
+				point_world = tfBuffer.transform(point_camera, "map");
 				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// printf("center %f, %f, %f\n",x,y,z);
@@ -279,26 +254,28 @@ class my_detector
 				BBox.size.z = z_width;
 				BBoxes.boxes.push_back(BBox);
 
-				bool person = false;
-				Rect uv_box2d = Rect( uv_detector.bounding_box_U[i].tl().x ,uv_detector.bounding_box_U[i].tl().y, uv_detector.bounding_box_U[i].br().x - uv_detector.bounding_box_U[i].tl().x, uv_detector.bounding_box_U[i].br().y -uv_detector.bounding_box_U[i].tl().y);
-				for (int j = 1 ; j < bboxes_human.bounding_boxes.size() ; j++) // first box is meaningless.
-				{
-					human_rect = Rect(bboxes_human.bounding_boxes[i].xmin,bboxes_human.bounding_boxes[i].ymin, bboxes_human.bounding_boxes[i].xmax-bboxes_human.bounding_boxes[i].xmin, bboxes_human.bounding_boxes[i].ymax-bboxes_human.bounding_boxes[i].ymin);
-					Rect overlap = human_rect & uv_box2d;
-					// printf("uv_box x,y,w,h %d,%d,%d,%d",uv_box2d.x, uv_box2d.y, uv_box2d.width,uv_box2d.height);
-					// printf("overlap x,y,w,h %d,%d,%d,%d",overlap.x, overlap.y, overlap.width,overlap.height);
-					person = person ||(overlap.area() >= 0.5 * uv_box2d.area());
-					// printf("overlap, uv_box2d %d, %d\n",overlap.area(), uv_box2d.area() );
-				}
-				if (person)
-				{
-					uv_detector.person_box3Ds.push_back(uv_detector.box3Ds[i]);
-					ROS_INFO("person detected\n");
-				}
+			
+
+				// bool person = false;
+				// Rect uv_box2d = Rect( uv_detector.bounding_box_U[i].tl().x ,uv_detector.bounding_box_U[i].tl().y, uv_detector.bounding_box_U[i].br().x - uv_detector.bounding_box_U[i].tl().x, uv_detector.bounding_box_U[i].br().y -uv_detector.bounding_box_U[i].tl().y);
+				// for (int j = 1 ; j < bboxes_human.bounding_boxes.size() ; j++) // first box is meaningless.
+				// {
+				// 	human_rect = Rect(bboxes_human.bounding_boxes[i].xmin,bboxes_human.bounding_boxes[i].ymin, bboxes_human.bounding_boxes[i].xmax-bboxes_human.bounding_boxes[i].xmin, bboxes_human.bounding_boxes[i].ymax-bboxes_human.bounding_boxes[i].ymin);
+				// 	Rect overlap = human_rect & uv_box2d;
+				// 	// printf("uv_box x,y,w,h %d,%d,%d,%d",uv_box2d.x, uv_box2d.y, uv_box2d.width,uv_box2d.height);
+				// 	// printf("overlap x,y,w,h %d,%d,%d,%d",overlap.x, overlap.y, overlap.width,overlap.height);
+				// 	person = person ||(overlap.area() >= 0.5 * uv_box2d.area());
+				// 	// printf("overlap, uv_box2d %d, %d\n",overlap.area(), uv_box2d.area() );
+				// }
+				// if (person)
+				// {
+				// 	uv_detector.person_box3Ds.push_back(uv_detector.box3Ds[i]);
+				// 	ROS_INFO("person detected\n");
+				// }
 
 			}
-			marker_pub.publish(lines);
-			bboxes_pub.publish(BBoxes);
+			box_marker_pub.publish(lines);
+			// bboxes_pub.publish(BBoxes);
 
 
 			
@@ -309,43 +286,52 @@ class my_detector
 			visualization_msgs::Marker marker;
 			visualization_msgs::MarkerArray markers;
 			
-			marker.header.frame_id = "camera_link";
+			marker.header.frame_id = "map";
 			marker.id = 0;
 			marker.type = visualization_msgs::Marker::SPHERE;
 			marker.action = visualization_msgs::Marker::ADD;
 			double u_r, u_l, d_b, d_t;
-			for(int i = 0; i < this->uv_detector.person_box3Ds.size(); i++)
+			while (!tfBuffer.canTransform("map","camera_link",point_camera.header.stamp,ros::Duration(5.0))){
+				ROS_INFO("waiting for transform");
+			}
+			// tf::StampedTransform transform;
+			// listener.lookupTransform("map","camera_link",point_camera.header.stamp,transform);
+			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++)
 			{
-				// cout<<"----------------------------"<<endl;
-				// cout<<"Object "<< i <<": "<<endl;
-				// cout<<"x: " << uv_detector.person_box3Ds[i].x<<endl;
-				// cout<<"y: " <<uv_detector.person_box3Ds[i].y<<endl;
-				// cout<<"z: " <<uv_detector.person_box3Ds[i].z<<endl;
+				
 
 				marker.lifetime = ros::Duration(0.05);
-				marker.pose.position.x = uv_detector.person_box3Ds[i].x / 1000.; // convert from mm to m
-				marker.pose.position.y = uv_detector.person_box3Ds[i].y / 1000.;
-				marker.pose.position.z = uv_detector.person_box3Ds[i].z / 1000.;
+				marker.pose.position.x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
+				marker.pose.position.y = uv_detector.box3Ds[i].y / 1000.;
+				marker.pose.position.z = uv_detector.box3Ds[i].z / 1000.;
 
-				marker.scale.x = uv_detector.person_box3Ds[i].x_width / 1000.;
-				marker.scale.y = uv_detector.person_box3Ds[i].y_width / 1000.;
-				marker.scale.z = uv_detector.person_box3Ds[i].z_width / 1000.;
+				point_camera.point.x = marker.pose.position.x;
+				point_camera.point.y = marker.pose.position.y;
+				point_camera.point.z = marker.pose.position.z;
+				point_world = tfBuffer.transform(point_camera, "map");
+				marker.pose.position.x = point_world.point.x;
+				marker.pose.position.y = point_world.point.y;
+				marker.pose.position.z = point_world.point.z;
+
+				marker.scale.x = uv_detector.box3Ds[i].x_width / 1000.;
+				marker.scale.y = uv_detector.box3Ds[i].y_width / 1000.;
+				marker.scale.z = uv_detector.box3Ds[i].z_width / 1000.;
 
 				marker.pose.orientation.x = 0.0;
 				marker.pose.orientation.y = 0.0;
 				marker.pose.orientation.z = 0.0;
 				marker.pose.orientation.w = 1.0;
-				
+
 				marker.color.a = 0.7; // Don't forget to set the alpha!
 				marker.color.r = abs(sin(i));
 				marker.color.g = abs(cos(i));
 				marker.color.b = (abs(cos(i)) + abs(sin(i))) / 2;
 				markers.markers.push_back(marker);
 				marker.id++;
-			}
+			} 
 
-			person_marker_pub.publish(markers);
-			uv_detector.person_box3Ds.clear();
+			marker_pub.publish(markers);
+			uv_detector.box3Ds.clear();
 		}
 
 	private:  
@@ -358,7 +344,8 @@ class my_detector
 		UVdetector uv_detector;
 		ros::Publisher marker_pub;
 		ros::Publisher bboxes_pub;
-		ros::Publisher person_marker_pub;
+		ros::Publisher box_marker_pub;
+		tf::TransformListener listener;
 
 		darknet_ros_msgs::BoundingBoxes bboxes_human;
 		Rect human_rect;

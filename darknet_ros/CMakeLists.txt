@@ -28,7 +28,8 @@ if (CUDA_FOUND)
     CUDA_NVCC_FLAGS
     ${CUDA_NVCC_FLAGS};
     -O3
-    -gencode arch=compute_86,code=sm_86
+    -gencode arch=compute_72,code=sm_72
+    # -gencode arch=compute_86,code=sm_86
     # -gencode arch=compute_30,code=sm_30
     # -gencode arch=compute_35,code=sm_35
     # -gencode arch=compute_50,code=[sm_50,compute_50]
@@ -53,7 +54,7 @@ endif ( X11_FOUND )
 
 # Find rquired packeges
 find_package(Boost REQUIRED COMPONENTS thread)
-# find_package(OpenCV 4.2.0 REQUIRED) # works for Desktop
+# find_package(OpenCV 3.4.3 REQUIRED) # works for Desktop
 # drone requires opencv 3.4.3
 # find_package(OpenCV 3.4.3 REQUIRED)
 set(OpenCV_DIR /home/cerlab/Packages/opencv-3.4.3/build)
@@ -75,6 +76,7 @@ find_package(catkin REQUIRED
     geometry_msgs
     message_generation
     tf2_ros
+    tf
 )
 
 # Enable OPENCV in darknet
@@ -184,9 +186,9 @@ if (CUDA_FOUND)
   #   src/yolo_object_detector_node.cpp
   # )
 
-  cuda_add_executable(${PROJECT_NAME} src/yolo_object_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp ${tf2_LIABRARIES})
+  cuda_add_executable(${PROJECT_NAME} src/yolo_object_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp )
 
-  cuda_add_executable( ${PROJECT_NAME}_uv_detector src/uv_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp)
+  cuda_add_executable( ${PROJECT_NAME}_uv_detector src/uv_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp )
 
   cuda_add_library(${PROJECT_NAME}_nodelet
     src/yolo_object_detector_nodelet.cpp
@@ -213,7 +215,7 @@ else()
 endif()
 
 add_executable(${PROJECT_NAME}_pub_pose src/pub_pose_node.cpp)
-target_link_libraries(${PROJECT_NAME}_pub_pose ${catkin_LIBRARIES} ${tf2_ros_LIABRARIES})
+target_link_libraries(${PROJECT_NAME}_pub_pose ${catkin_LIBRARIES} ${tf2_ros_LIABRARIES} ${tf_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}_lib
   m
@@ -228,7 +230,7 @@ target_link_libraries(${PROJECT_NAME}_lib
 )
 
 target_link_libraries(${PROJECT_NAME}_uv_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES}  Eigen3::Eigen ${vision_msgs_LIBRARIES}) # realsense2?
-target_link_directories(${PROJECT_NAME}_uv_detector PUBLIC include/uv_detector)
+#target_link_directories(${PROJECT_NAME}_uv_detector PUBLIC include/uv_detector)
 target_link_libraries(${PROJECT_NAME}
   ${PROJECT_NAME}_lib 
 )

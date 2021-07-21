@@ -9,9 +9,9 @@ int main(int argc, char** argv) {
 
     static tf2_ros::TransformBroadcaster broadcaster;
     geometry_msgs::TransformStamped tfs;
-    tfs.header.frame_id = "world";
+    tfs.header.frame_id = "map";
     tfs.header.stamp = ros::Time::now();
-    tfs.child_frame_id = "camera";
+    tfs.child_frame_id = "camera_link";
 
     tfs.transform.translation.x = 0.0;
     tfs.transform.translation.y = 0.0;

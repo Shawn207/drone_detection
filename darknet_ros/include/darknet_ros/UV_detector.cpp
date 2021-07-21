@@ -44,12 +44,21 @@ UVtracker::UVtracker()
     this->overlap_threshold = 0.51;
 }
 
-void UVtracker::read_bb(vector<Rect> now_bb)
+void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D> &box_3D)
 {
     // measurement history
     this->pre_history = this->now_history;
     this->now_history.clear();
     this->now_history.resize(now_bb.size());
+    // 3D box history
+    this->pre_box_3D_history = this->now_box_3D_history;
+    this->now_box_3D_history.clear();
+    this->now_box_3D_history.resize(now_bb.size());
+    // fix size flag history
+    this->pre_fix = this->now_fix;
+    this->now_fix.clear();
+    this->now_fix.resize(now_bb.size());
+    
     // kalman filters
     this->pre_filter = this->now_filter;
     this->now_filter.clear();
@@ -57,8 +66,40 @@ void UVtracker::read_bb(vector<Rect> now_bb)
     // bounding box
     this->pre_bb = this->now_bb;
     this->now_bb = now_bb;
-}
+    this->now_bb_D = now_bb_D;
+    this->now_box_3D = box_3D;
+    // pre_history only stores 30 frames record for each track
+    for (int i=0 ; i<this->pre_history.size() ; i++) {
+        if (this->pre_history[i].size() > 30) {
+            this->pre_history[i].erase(this->pre_history[i].begin());
+        }
+    }  
+    for (int i=0 ; i<this->pre_box_3D_history.size() ; i++) {
+        // for each box track, fix the size after showing up for 30 frames
+        if (this->pre_box_3D_history[i].size() > 30) {
+            x_width_sum[i] -= this->pre_box_3D_history[i][0].x_width;
+            y_width_sum[i] -= this->pre_box_3D_history[i][0].y_width;
+            z_width_sum[i] -= this->pre_box_3D_history[i][0].z_width;
+            this->pre_box_3D_history[i].pop_front();
+            // update box size to be the average of the previous 30
+            // now_box_3D[i].x_width = x_width_sum[i]/30;
+            // now_box_3D[i].y_width = z_width_sum[i]/30;
+            // now_box_3D[i].z_width = y_width_sum[i]/30;
 
+            // fix box size to be the last one showed fully in FOV
+            // also store the value for future 
+            if (pre_fix[i]) {
+                pre_fix[i] = false;
+            }
+            this->now_box_3D[i].x_width = this->pre_box_3D_history[i].back().x_width;
+            this->now_box_3D[i].y_width = this->pre_box_3D_history[i].back().y_width;
+            this->now_box_3D[i].z_width = this->pre_box_3D_history[i].back().z_width;
+
+        }
+    }   
+    box_3D = this->now_box_3D;
+}
+   
 void UVtracker::check_status()
 {
     for(int now_id = 0; now_id < this->now_bb.size(); now_id++)
@@ -70,9 +111,28 @@ void UVtracker::check_status()
             if(min(overlap.area() / float(this->now_bb[now_id].area()), overlap.area() / float(this->now_bb[now_id].area())) >= this->overlap_threshold)
             {
                 tracked = true;
-                // add current detection to history
+                // inherit add current detection to history
                 this->now_history[now_id] = this->pre_history[pre_id];
                 this->now_history[now_id].push_back(Point2f(this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height));
+                // update fix flag
+                this->now_fix[now_id] = this->pre_fix[now_id];
+                // inherit 3d box history 
+                this->now_box_3D_history[now_id] = this->pre_box_3D_history[pre_id];
+                // add current 3D box to box history only if when it is full in the FOV. otherwise, clear the history and track again
+                if (this->now_bb_D[now_id].tl().x>5 && this->now_bb_D[now_id].tl().y>5 && this->now_bb_D[now_id].br().x<635 && this->now_bb_D[now_id].br().y<475) {
+                    this->now_box_3D_history[now_id].push_back(this->now_box_3D[now_id]);
+                    // this->x_width_sum[now_id] += this->now_box_3D[now_id].x_width;
+                    // this->y_width_sum[now_id] += this->now_box_3D[now_id].y_width;
+                    // this->z_width_sum[now_id] += this->now_box_3D[now_id].z_width;
+                }
+                // else {
+                //     if (this->pre_box_3D_history.size() > now_id) {
+                //         this->pre_box_3D_history[now_id].clear();
+                //     }
+                //     this->x_width_sum[now_id] = 0.;
+                //     this->y_width_sum[now_id] = 0.;
+                //     this->z_width_sum[now_id] = 0.;
+                // }
                 // add measurement to previous filter
                 this->now_filter[now_id] = this->pre_filter[pre_id];
                 MatrixXd z(4,1); // measurement
@@ -80,14 +140,34 @@ void UVtracker::check_status()
                 MatrixXd u(1,1); // input
                 u << 0;
                 // run the filter 
-                this->now_filter[now_id].estimate(z, u);
+                this->now_filter[now_id].estimate(z, u);    
                 break;
-            }
+            } 
         }
         if(!tracked)
         {
             // add current detection to history
             this->now_history[now_id].push_back(Point2f(this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height));
+            this->now_fix[now_id] = true;
+            this->x_width_sum.push_back(0.0);
+            this->y_width_sum.push_back(0.0);
+            this->z_width_sum.push_back(0.0);
+            // add current 3D box to box history only if when it is full in the FOV. otherwise, clear the history and track again
+            if (this->now_bb_D[now_id].tl().x>5 && this->now_bb_D[now_id].tl().y>5 && this->now_bb_D[now_id].br().x<635 && this->now_bb_D[now_id].br().y<475) {
+                this->now_box_3D_history[now_id].push_back(this->now_box_3D[now_id]);
+                // this->x_width_sum[now_id] += this->now_box_3D[now_id].x_width;
+                // this->y_width_sum[now_id] += this->now_box_3D[now_id].y_width;
+                // this->z_width_sum[now_id] += this->now_box_3D[now_id].z_width;
+            }
+            // else {
+            //     if (this->pre_box_3D_history.size() > now_id) {
+            //         this->pre_box_3D_history[now_id].clear();
+            //     }
+                
+            //     this->x_width_sum[now_id] = 0.;
+            //     this->y_width_sum[now_id] = 0.;
+            //     this->z_width_sum[now_id] = 0.;
+            // }
             // initialize filter
             int f = 30; // Hz
             double ts = 1.0 / f; // s
@@ -154,10 +234,10 @@ UVdetector::UVdetector()
     // this->min_length_line = 6;
     this->show_bounding_box_U = true;
     // the following intrinsic parameters can be found in /camera/depth/camera_info
-    this->fx = 422.5233;
-    this->fy = 422.5233;
-    this->px = 426.6043;
-    this->py = 240.3157;
+    this->fx = 610.05810546875;
+    this->fy = 610.0372924804688;
+    this->px = 320.14599609375;
+    this->py = 241.946044921875;
 
     this->x0 = 0;
     this->y0 = 0;
@@ -188,7 +268,7 @@ void UVdetector::readrgb(Mat RGB)
 {
     this->RGB = RGB;
     resize(this->RGB, this->RGB, Size(720,400));
-    imshow("RGB", this->RGB);
+    // imshow("RGB", this->RGB);
 }
 
 void UVdetector::extract_U_map()
@@ -340,7 +420,7 @@ void UVdetector::detect()
 
     // extract object's height
     // this->extract_height();
-}
+}  
 void UVdetector::display_depth()
 {
     // in order to get a better visualization, we need normalized depth map in range (0, 255)
@@ -355,8 +435,9 @@ void UVdetector::display_depth()
     // loop for adding bounding boxes
     for (int i=0;i<this->bounding_box_D.size();i++){
         rectangle(depth_normalized, bounding_box_D[i], cv::Scalar(0, 0, 255), 5, 8, 0);
+       // printf("bbox %d br.x coord %d, tl.x coord %d\n",i , bounding_box_D[i].br().x, bounding_box_D[i].tl().x);
     }
-    imshow("Depth", depth_normalized);
+   // imshow("Depth", depth_normalized);
     waitKey(1);
 }
 
@@ -435,7 +516,7 @@ void UVdetector::extract_3Dbox()
         float bb_y = y_up;
         float bb_height = y_down-y_up;
         this->bounding_box_D.push_back(Rect(bb_x, bb_y, bb_width, bb_height));
-
+    
         box3D curr_box;
         // extract x,y coordinates in input depth frame
         im_frame_x  = (x + width / 2) / this->col_scale;
@@ -460,12 +541,12 @@ void UVdetector::extract_3Dbox()
         curr_box.y_width = im_frame_x_width*Y_w/this->fx;
         curr_box.z_width = im_frame_y_width*Y_w/this->fy;
         curr_box.x = Y_w;
-        curr_box.x_width = depth_of_depth;
+        curr_box.x_width = depth_in_far-depth_in_near;// depth of depth originally
         box3Ds.push_back(curr_box);
         // printf("depth in near: %f \n",depth_in_near);
     }
 }
-    
+      
 // void UVdetector::display_RGB()
 // {
 
@@ -484,11 +565,6 @@ void UVdetector::display_U_map()
             circle(this->U_map, Point2f(this->bounding_box_U[b].tl().x + 0.5 * this->bounding_box_U[b].width, this->bounding_box_U[b].br().y ), 2, Scalar(0, 0, 255), 5, 8, 0);
         }
     } 
-    for (int yy=-20 ; yy<21 ; yy++)
-    {
-        // printf("U map at %d , %d , is %d\n", yy+testby, testx, this->U_map.at<uchar>(yy+testby, testx));
-    }
-    imshow("U map", this->U_map);
     waitKey(1);
 }
 
@@ -507,7 +583,7 @@ void UVdetector::extract_bird_view()
         float bb_width = bb_depth * this->bounding_box_U[b].width / this->fx;
         float bb_height = this->bounding_box_U[b].height * bin_width / 10;
         float bb_x = bb_depth * (this->bounding_box_U[b].tl().x / this->col_scale - this->px) / this->fx;
-        float bb_y = bb_depth - 0.5 * bb_height;
+        float bb_y = bb_depth - 0.5 * bb_height;// assume farthest depth value is the depth of center point, then assume detected depth difference is the depth of the whole body. y is the depth direction
         this->bounding_box_B[b] = Rect(bb_x, bb_y, bb_width, bb_height);
     }
 
@@ -519,8 +595,6 @@ void UVdetector::extract_bird_view()
 void UVdetector::display_bird_view()
 {
     // center point
-    // cout<<"bird col:"<<bird_view.cols<<endl;
-    // cout<<"delth:"<<depth.cols<<endl;
     Point2f center = Point2f(this->bird_view.cols / 2, this->bird_view.rows);
     Point2f left_end_to_center = Point2f( this->bird_view.rows * (0 - this->px) / this->fx, -this->bird_view.rows);
     Point2f right_end_to_center = Point2f( this->bird_view.rows * (this->depth.cols - this->px) / this->fx, -this->bird_view.rows);
@@ -581,7 +655,10 @@ void UVdetector::add_tracking_result()
 
 void UVdetector::track()
 {
-    this->tracker.read_bb(this->bounding_box_B);
+    // float before = this->box3Ds[0].x_width;
+    this->tracker.read_bb(this->bounding_box_B, this->bounding_box_D, this->box3Ds);
     this->tracker.check_status();
     this->add_tracking_result();
+    // float after = this->box3Ds[0].x_width;
+    // printf("verify : %f, %f", before, after);
 }
