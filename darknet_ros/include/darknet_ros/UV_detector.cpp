@@ -579,7 +579,7 @@ void UVdetector::extract_3Dbox()
         bin_index_large = this->bounding_box_U[b].br().y;
         depth_in_near = (bin_index_small * bin_width + this->min_dist);
         depth_of_depth = (bin_index_large - bin_index_small) * bin_width;
-        depth_in_far = depth_of_depth*1.8 + depth_in_near; // assumed depth was truncated because of occlusion
+        depth_in_far = depth_of_depth*1.3 + depth_in_near; // assumed depth was truncated because of occlusion
 
         // for debugging
         // cout << "-------------" << endl;
