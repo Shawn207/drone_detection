@@ -25,6 +25,8 @@
 #include "darknet_ros_msgs/BoundingBox3DArray.h"
 #include <darknet_ros_msgs/BoundingBox.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
+#include <darknet_ros_msgs/BoundingBoxUV2d.h>
+#include <darknet_ros_msgs/BoundingBoxesUV2d.h>
 
 using namespace cv; 
 using namespace std;
@@ -41,23 +43,18 @@ class my_detector
 		{  	
 			image_transport::ImageTransport it(nh);
 			
-			//Topic subscribed 
-			// depsub = it.subscribe("/camera/depth/image_rect_raw", 1, &my_detector::depthCallback,this);
-			// imgsub = it.subscribe("/camera/color/image_raw", 1, &my_detector::imageCallback,this);
-			// rectsub = nh.subscribe("/person_detector/human_rect",1,&my_detector::rectCallback,this);
 			depsub = it.subscribe("/camera/aligned_depth_to_color/image_raw", 1, &my_detector::depthCallback,this);
 			imgsub = it.subscribe("/camera/color/image_raw", 1, &my_detector::imageCallback,this);
-			rectsub = nh.subscribe("/person_detector/human_rect",1,&my_detector::rectCallback,this);
 			
 			ros::Time time = ros::Time::now();
-			ros::Duration duration(5.0);
+			ros::Duration duration(3.0);
 			while(ros::Time::now() - time < duration){
 				ROS_INFO("Wating. Give some tfBuffer some time to populate transformations");
 			}
 
 			// Topic published
 			marker_pub = nh.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1);
-			bboxes_pub = nh.advertise<darknet_ros_msgs::BoundingBox3DArray>("Bounding_Box3D", 1);
+			bboxes_pub = nh.advertise<darknet_ros_msgs::BoundingBoxesUV2d>("bounding_boxes_2D", 1);
 			box_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("box_visualization_marker", 1);
 			// obstacles = n.advertise<std_msgs::Float64MultiArray>("Obstacles", 1000); // working on
 
@@ -111,7 +108,7 @@ class my_detector
 			// this->uv_detector.display_bird_view();
 			this->uv_detector.extract_3Dbox();
 			this->uv_detector.track();
-			// this->uv_detector.display_depth();
+			this->uv_detector.display_depth();
 
 			
 // // point coordinate
@@ -131,6 +128,24 @@ class my_detector
 // //															|/y
 // //															--->x
 
+			//publish 2d boxes in depth frame
+			darknet_ros_msgs::BoundingBoxUV2d bbox2D;
+			darknet_ros_msgs::BoundingBoxesUV2d bbox2Ds;
+			for (int i=0 ; i< this->uv_detector.bounding_box_D.size() ; i++) {
+				bbox2D.header.stamp = ros::Time::now();
+				bbox2D.header.frame_id = "camera_link";
+				bbox2D.xmin = this->uv_detector.bounding_box_D[i].tl().x;
+				bbox2D.ymin = this->uv_detector.bounding_box_D[i].tl().y;
+				bbox2D.xmax = this->uv_detector.bounding_box_D[i].br().x;
+				bbox2D.ymax = this->uv_detector.bounding_box_D[i].br().y;
+				bbox2Ds.bounding_boxes.push_back(bbox2D);
+			}
+			bbox2Ds.header.stamp = ros::Time::now();
+			bbox2Ds.header.frame_id = "camera_link";
+			bboxes_pub.publish(bbox2Ds);
+			
+
+
 			// visualization using bounding boxes
 			visualization_msgs::Marker line;
 			visualization_msgs::MarkerArray lines;
@@ -146,10 +161,10 @@ class my_detector
 			line.lifetime = ros::Duration(0.05);
 
 			// vision msgs
-			darknet_ros_msgs::BoundingBox3D BBox;
-			darknet_ros_msgs::BoundingBox3DArray BBoxes;
-			BBoxes.header.stamp = ros::Time::now();
-			BBoxes.header.frame_id = 'map';
+			// darknet_ros_msgs::BoundingBox3D BBox_camera;
+			// darknet_ros_msgs::BoundingBox3DArray BBoxes_camera;
+			// BBoxes.header.stamp = ros::Time::now();
+			// BBoxes.header.frame_id = 'camera_link';
 
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
 				
@@ -168,7 +183,7 @@ class my_detector
 				// vertice 0
 				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-				while (!tfBuffer.canTransform("map","camera_link",point_camera.header.stamp,ros::Duration(5.0))){
+				while (!tfBuffer.canTransform("map","camera_link",point_camera.header.stamp,ros::Duration(1.0))){
 					ROS_INFO("waiting for transform");
 				}
 				// ROS_INFO("transform is ready!!");
@@ -245,18 +260,18 @@ class my_detector
 				line.id++;
 
 				// vision msgs
-				BBox.center.position.x = x;
-				BBox.center.position.y = y;
-				BBox.center.position.z = z;
+				// BBox_camera.center.position.x = x;
+				// BBox_camera.center.position.y = y;
+				// BBox_camera.center.position.z = z;
 
-				BBox.size.x = x_width;
-				BBox.size.y = y_width;
-				BBox.size.z = z_width;
-				BBoxes.boxes.push_back(BBox);
+				// BBox_camera.size.x = x_width;
+				// BBox_camera.size.y = y_width;
+				// BBox_camera.size.z = z_width;
+				// BBoxes_camera.boxes.push_back(BBox_camera);
 
 			}
 			box_marker_pub.publish(lines);
-			// bboxes_pub.publish(BBoxes);
+			
 
 
 			
@@ -268,6 +283,7 @@ class my_detector
 			visualization_msgs::MarkerArray markers;
 			
 			marker.header.frame_id = "map";
+			marker.header.stamp = ros::Time::now();
 			marker.id = 0;
 			marker.type = visualization_msgs::Marker::SPHERE;
 			marker.action = visualization_msgs::Marker::ADD;
@@ -276,7 +292,7 @@ class my_detector
 			// 	ROS_INFO("waiting for transform");
 			// }   
 			tf::StampedTransform transform;
-			listener.waitForTransform("map","camera_link",point_camera.header.stamp,ros::Duration(3.0));
+			listener.waitForTransform("map","camera_link",point_camera.header.stamp,ros::Duration(1.0));
 			listener.lookupTransform("map","camera_link",point_camera.header.stamp,transform);
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++)
 			{   

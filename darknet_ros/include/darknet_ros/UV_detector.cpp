@@ -74,30 +74,30 @@ void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D
             this->pre_history[i].erase(this->pre_history[i].begin());
         }
     }  
-    for (int i=0 ; i<this->pre_box_3D_history.size() ; i++) {
-        // for each box track, fix the size after showing up for 30 frames
-        if (this->pre_box_3D_history[i].size() > 30) {
-            x_width_sum[i] -= this->pre_box_3D_history[i][0].x_width;
-            y_width_sum[i] -= this->pre_box_3D_history[i][0].y_width;
-            z_width_sum[i] -= this->pre_box_3D_history[i][0].z_width;
-            this->pre_box_3D_history[i].pop_front();
-            // update box size to be the average of the previous 30
-            // now_box_3D[i].x_width = x_width_sum[i]/30;
-            // now_box_3D[i].y_width = z_width_sum[i]/30;
-            // now_box_3D[i].z_width = y_width_sum[i]/30;
+    // for (int i=0 ; i<this->pre_box_3D_history.size() ; i++) {
+    //     // for each box track, fix the size after showing up for 30 frames
+    //     if (this->pre_box_3D_history[i].size() > 30) {
+    //         x_width_sum[i] -= this->pre_box_3D_history[i][0].x_width;
+    //         y_width_sum[i] -= this->pre_box_3D_history[i][0].y_width;
+    //         z_width_sum[i] -= this->pre_box_3D_history[i][0].z_width;
+    //         this->pre_box_3D_history[i].pop_front();
+    //         // update box size to be the average of the previous 30
+    //         // now_box_3D[i].x_width = x_width_sum[i]/30;
+    //         // now_box_3D[i].y_width = z_width_sum[i]/30;
+    //         // now_box_3D[i].z_width = y_width_sum[i]/30;
 
-            // fix box size to be the last one showed fully in FOV
-            // also store the value for future 
-            if (pre_fix[i]) {
-                pre_fix[i] = false;
-            }
-            this->now_box_3D[i].x_width = this->pre_box_3D_history[i].back().x_width;
-            this->now_box_3D[i].y_width = this->pre_box_3D_history[i].back().y_width;
-            this->now_box_3D[i].z_width = this->pre_box_3D_history[i].back().z_width;
+    //         // fix box size to be the last one showed fully in FOV
+    //         // also store the value for future 
+    //         if (pre_fix[i]) {
+    //             pre_fix[i] = false;
+    //         }
+    //         this->now_box_3D[i].x_width = this->pre_box_3D_history[i].back().x_width;
+    //         this->now_box_3D[i].y_width = this->pre_box_3D_history[i].back().y_width;
+    //         this->now_box_3D[i].z_width = this->pre_box_3D_history[i].back().z_width;
 
-        }
-    }   
-    box_3D = this->now_box_3D;
+    //     }
+    // }   
+    // box_3D = this->now_box_3D;
 }
    
 void UVtracker::check_status()
@@ -115,7 +115,7 @@ void UVtracker::check_status()
                 this->now_history[now_id] = this->pre_history[pre_id];
                 this->now_history[now_id].push_back(Point2f(this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height));
                 // update fix flag
-                this->now_fix[now_id] = this->pre_fix[now_id];
+                this->now_fix[now_id] = this->pre_fix[pre_id];
                 // inherit 3d box history 
                 this->now_box_3D_history[now_id] = this->pre_box_3D_history[pre_id];
                 // add current 3D box to box history only if when it is full in the FOV. otherwise, clear the history and track again
@@ -233,11 +233,11 @@ UVdetector::UVdetector()
     // this->threshold_line = 2;
     // this->min_length_line = 6;
     this->show_bounding_box_U = true;
-    // the following intrinsic parameters can be found in /camera/depth/camera_info
-    this->fx = 610.05810546875;
-    this->fy = 610.0372924804688;
-    this->px = 320.14599609375;
-    this->py = 241.946044921875;
+    // the following intrinsic parameters can be found in /camera/../camera_info
+    this->fx = 608.08740234375;
+    this->fy = 608.1791381835938;
+    this->px = 317.48284912109375;
+    this->py = 234.11557006835938;
 
     this->x0 = 0;
     this->y0 = 0;
@@ -437,7 +437,7 @@ void UVdetector::display_depth()
         rectangle(depth_normalized, bounding_box_D[i], cv::Scalar(0, 0, 255), 5, 8, 0);
        // printf("bbox %d br.x coord %d, tl.x coord %d\n",i , bounding_box_D[i].br().x, bounding_box_D[i].tl().x);
     }
-   // imshow("Depth", depth_normalized);
+//    imshow("Depth", depth_normalized);
     waitKey(1);
 }
 
@@ -534,7 +534,7 @@ void UVdetector::extract_3Dbox()
         testy = im_frame_y;
         testby = bin_index_small;
         // image frame to world frame transformation
-        // x axis is remain the same, y in world frame is the depth direction, z in world frame 
+        // x in world frame is the depth direction, y in world frame is -x, z in world frame 
         // is align with -y in image frame 
         curr_box.y =  -(im_frame_x-this->px)*Y_w/this->fx;
         curr_box.z = -(im_frame_y-this->py)*Y_w/this->fy;
