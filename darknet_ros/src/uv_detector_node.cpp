@@ -169,7 +169,7 @@ class my_detector
 				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
 				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
 				while (!tfBuffer.canTransform("map","camera_link",point_camera.header.stamp,ros::Duration(5.0))){
-				ROS_INFO("waiting for transform");
+					ROS_INFO("waiting for transform");
 				}
 				// ROS_INFO("transform is ready!!");
 
@@ -254,25 +254,6 @@ class my_detector
 				BBox.size.z = z_width;
 				BBoxes.boxes.push_back(BBox);
 
-			
-
-				// bool person = false;
-				// Rect uv_box2d = Rect( uv_detector.bounding_box_U[i].tl().x ,uv_detector.bounding_box_U[i].tl().y, uv_detector.bounding_box_U[i].br().x - uv_detector.bounding_box_U[i].tl().x, uv_detector.bounding_box_U[i].br().y -uv_detector.bounding_box_U[i].tl().y);
-				// for (int j = 1 ; j < bboxes_human.bounding_boxes.size() ; j++) // first box is meaningless.
-				// {
-				// 	human_rect = Rect(bboxes_human.bounding_boxes[i].xmin,bboxes_human.bounding_boxes[i].ymin, bboxes_human.bounding_boxes[i].xmax-bboxes_human.bounding_boxes[i].xmin, bboxes_human.bounding_boxes[i].ymax-bboxes_human.bounding_boxes[i].ymin);
-				// 	Rect overlap = human_rect & uv_box2d;
-				// 	// printf("uv_box x,y,w,h %d,%d,%d,%d",uv_box2d.x, uv_box2d.y, uv_box2d.width,uv_box2d.height);
-				// 	// printf("overlap x,y,w,h %d,%d,%d,%d",overlap.x, overlap.y, overlap.width,overlap.height);
-				// 	person = person ||(overlap.area() >= 0.5 * uv_box2d.area());
-				// 	// printf("overlap, uv_box2d %d, %d\n",overlap.area(), uv_box2d.area() );
-				// }
-				// if (person)
-				// {
-				// 	uv_detector.person_box3Ds.push_back(uv_detector.box3Ds[i]);
-				// 	ROS_INFO("person detected\n");
-				// }
-
 			}
 			box_marker_pub.publish(lines);
 			// bboxes_pub.publish(BBoxes);
@@ -291,20 +272,19 @@ class my_detector
 			marker.type = visualization_msgs::Marker::SPHERE;
 			marker.action = visualization_msgs::Marker::ADD;
 			double u_r, u_l, d_b, d_t;
-			while (!tfBuffer.canTransform("map","camera_link",point_camera.header.stamp,ros::Duration(5.0))){
-				ROS_INFO("waiting for transform");
-			}
-			// tf::StampedTransform transform;
-			// listener.lookupTransform("map","camera_link",point_camera.header.stamp,transform);
+			// while (!tfBuffer.canTransform("map","camera_link",point_camera.header.stamp,ros::Duration(5.0))){
+			// 	ROS_INFO("waiting for transform");
+			// }   
+			tf::StampedTransform transform;
+			listener.waitForTransform("map","camera_link",point_camera.header.stamp,ros::Duration(3.0));
+			listener.lookupTransform("map","camera_link",point_camera.header.stamp,transform);
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++)
-			{
-				
-
+			{   
 				marker.lifetime = ros::Duration(0.05);
 				marker.pose.position.x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
 				marker.pose.position.y = uv_detector.box3Ds[i].y / 1000.;
 				marker.pose.position.z = uv_detector.box3Ds[i].z / 1000.;
-
+   
 				point_camera.point.x = marker.pose.position.x;
 				point_camera.point.y = marker.pose.position.y;
 				point_camera.point.z = marker.pose.position.z;
@@ -317,10 +297,11 @@ class my_detector
 				marker.scale.y = uv_detector.box3Ds[i].y_width / 1000.;
 				marker.scale.z = uv_detector.box3Ds[i].z_width / 1000.;
 
-				marker.pose.orientation.x = 0.0;
-				marker.pose.orientation.y = 0.0;
-				marker.pose.orientation.z = 0.0;
-				marker.pose.orientation.w = 1.0;
+				marker.pose.orientation.x = transform.getRotation().getX();
+				marker.pose.orientation.y = transform.getRotation().getY();
+				marker.pose.orientation.z = transform.getRotation().getZ();
+				marker.pose.orientation.w = transform.getRotation().getW();
+				// printf("rotation %f, %f, %f, %f\n",marker.pose.orientation.x,marker.pose.orientation.y,marker.pose.orientation.z,marker.pose.orientation.w);
 
 				marker.color.a = 0.7; // Don't forget to set the alpha!
 				marker.color.r = abs(sin(i));

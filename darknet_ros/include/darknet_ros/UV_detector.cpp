@@ -108,7 +108,7 @@ void UVtracker::check_status()
         for(int pre_id = 0; pre_id < this->pre_bb.size(); pre_id++)
         {
             Rect overlap = this->now_bb[now_id] & this->pre_bb[pre_id];
-            if(min(overlap.area() / float(this->now_bb[now_id].area()), overlap.area() / float(this->now_bb[now_id].area())) >= this->overlap_threshold)
+            if(min(overlap.area() / float(this->now_bb[now_id].area()), overlap.area() / float(this->pre_bb[pre_id].area())) >= this->overlap_threshold)
             {
                 tracked = true;
                 // inherit add current detection to history
