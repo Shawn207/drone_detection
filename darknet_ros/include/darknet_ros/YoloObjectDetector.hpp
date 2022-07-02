@@ -59,6 +59,10 @@ extern "C" {
 // Image interface.
 #include "darknet_ros/image_interface.hpp"
 
+// uv_detector
+#include "darknet_ros/UV_detector.h"
+
+
 extern "C" cv::Mat image_to_mat(image im);
 extern "C" image mat_to_image(cv::Mat m);
 extern "C" int show_image(image p, const char* name, int ms);
@@ -107,6 +111,12 @@ class YoloObjectDetector {
   void cameraCallback(const sensor_msgs::ImageConstPtr& msg);
 
   /*!
+   * Callback of depth.
+   * @param[in] msg image pointer.
+   */
+  void depthCallback(const sensor_msgs::ImageConstPtr& msg);
+
+  /*!
    * Check for objects action goal callback.
    */
   void checkForObjectsActionGoalCB();
@@ -147,6 +157,7 @@ class YoloObjectDetector {
 
   //! ROS subscriber and publisher.
   image_transport::Subscriber imageSubscriber_;
+  image_transport::Subscriber depthSubscriber_;
   ros::Publisher objectPublisher_;
   ros::Publisher boundingBoxesPublisher_;
 
@@ -164,6 +175,9 @@ class YoloObjectDetector {
 
   // Yolo running on thread.
   std::thread yoloThread_;
+
+  // create uv_detector obj
+  UVdetector uv_detector;
 
   // Darknet.
   char** demoNames_;
@@ -201,10 +215,15 @@ class YoloObjectDetector {
 
   std_msgs::Header imageHeader_;
   cv::Mat camImageCopy_;
+  cv::Mat camDepthCopy_;
   boost::shared_mutex mutexImageCallback_;
+  boost::shared_mutex mutexDepthCallback_;
 
   bool imageStatus_ = false;
   boost::shared_mutex mutexImageStatus_;
+
+  bool depthStatus_ = false;
+  boost::shared_mutex mutexDepthStatus_;
 
   bool isNodeRunning_ = true;
   boost::shared_mutex mutexNodeStatus_;
@@ -239,9 +258,14 @@ class YoloObjectDetector {
 
   bool getImageStatus(void);
 
+  bool getDepthStatus(void);
+
   bool isNodeRunning(void);
 
   void* publishInThread();
+
+  void call_uv_detector(cv::Mat depth, vector<Rect> &bbox);
+
 };
 
 } /* namespace darknet_ros*/

@@ -17,6 +17,8 @@ add_message_files(
   FILES
     BoundingBox.msg
     BoundingBoxes.msg
+    BoundingBox3D.msg
+    BoundingBox3DArray.msg
     ObjectCount.msg
 )
 

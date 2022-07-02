@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_FLAGS "-Wall -Wno-unused-result -Wno-unknown-pragmas -Wno-unused-variable -Wfatal-errors -fPIC ${CMAKE_C_FLAGS}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# debug
+# set(CMAKE_CXX_FLAGS "-g") 
+
 # Define path of darknet folder here.
 find_path(DARKNET_PATH
   NAMES "README.md"
@@ -47,8 +50,11 @@ endif ( X11_FOUND )
 
 # Find rquired packeges
 find_package(Boost REQUIRED COMPONENTS thread)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.2.0 REQUIRED)
+# find_package(realsense2 2.50.0)
 include_directories(${OpenCV_INCLUDE_DIRS})
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+# include_directories(${Eigen_INCLUDE_DIRS})
 find_package(catkin REQUIRED
   COMPONENTS
     cv_bridge
@@ -59,6 +65,8 @@ find_package(catkin REQUIRED
     darknet_ros_msgs
     image_transport
     nodelet
+    sensor_msgs 
+    message_generation
 )
 
 # Enable OPENCV in darknet
@@ -86,11 +94,16 @@ catkin_package(
 include_directories(
   ${DARKNET_PATH}/src
   ${DARKNET_PATH}/include
+  # ${DARKNET_PATH}/include/darknet_ros
+  # ${DARKNET_PATH}/include/uv_detector
+
   include
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
-
+include_directories( include ${catkin_INCLUDE_DIRS} )
+include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${realsens2_INCLUDE_DIRS})
 set(PROJECT_LIB_FILES
     src/YoloObjectDetector.cpp                    src/image_interface.cpp
 )
@@ -168,16 +181,20 @@ if (CUDA_FOUND)
 else()
 
   add_library(${PROJECT_NAME}_lib
-    ${PROJECT_LIB_FILES} ${DARKNET_CORE_FILES}
+    ${PROJECT_LIB_FILES} ${DARKNET_CORE_FILES} 
   )
-
-  add_executable(${PROJECT_NAME}
-    src/yolo_object_detector_node.cpp
-  )
+  file(GLOB_RECURSE HDRS_FILES "src/*.h" "src/*.hpp" "include/uv_detector/*.h" "include/uv_detector/*.hpp")
+  file(GLOB_RECURSE SRCS_FILES "src/*.c" "src/*.cpp" "include/uv_detector/*.c" "include/uv_detector/*.cpp")
+  add_executable( ${PROJECT_NAME}_uv_detector src/uv_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp)
+  # add_executable( ${PROJECT_NAME}_uv_detector src/uv_detector_node.cpp ${SRCS_FILES} ${HDRS_FILES})
+  # add_executable( ${PROJECT_NAME}_uv_detector src/uv_detector_node.cpp include/uv_detector/kalman_filter.h include/uv_detector/kalman_filter.cpp include/uv_detector/UV_detector.h include/uv_detector/UV_detector.cpp)
+  # target_include_directories(${PROJECT_NAME}_uv_detector PUBLIC ${DARKNET_PATH}/include/uv_detector)
+  add_executable(${PROJECT_NAME} src/yolo_object_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp )
 
   add_library(${PROJECT_NAME}_nodelet
     src/yolo_object_detector_nodelet.cpp
   )
+
 
 endif()
 
@@ -185,21 +202,26 @@ target_link_libraries(${PROJECT_NAME}_lib
   m
   pthread
   stdc++
+  Eigen3::Eigen 
   ${Boost_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
+  # realsense2
 )
 
+target_link_libraries(${PROJECT_NAME}_uv_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES}  Eigen3::Eigen ${vision_msgs_LIBRARIES}) # realsense2?
+target_link_directories(${PROJECT_NAME}_uv_detector PUBLIC include/uv_detector)
 target_link_libraries(${PROJECT_NAME}
-  ${PROJECT_NAME}_lib
+  ${PROJECT_NAME}_lib 
 )
 
 target_link_libraries(${PROJECT_NAME}_nodelet
-  ${PROJECT_NAME}_lib
+  ${PROJECT_NAME}_lib 
 )
 
 add_dependencies(${PROJECT_NAME}_lib
+  # ${uv_detector_node_EXPORTED_TARGETS}
   darknet_ros_msgs_generate_messages_cpp
 )
 
@@ -280,3 +302,11 @@ if (cmake_clang_tools_FOUND)
     CF_WERROR
   )
 endif (cmake_clang_tools_FOUND)
+
+
+
+
+
+
+
+
