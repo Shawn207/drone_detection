@@ -414,7 +414,7 @@ void* YoloObjectDetector::detectInThread() {
     
   }
 
-  // create array to store found bounding boxes
+  // create array to store found bounding boxes  
   // if no object detected, make sure that ROS knows that num = 0
   if (count == 0) {
     roiBoxes_[0].num = 0;
