@@ -161,7 +161,10 @@ void YoloObjectDetector::init() {
       nodeHandle_.advertise<darknet_ros_msgs::BoundingBoxes>(boundingBoxesTopicName, boundingBoxesQueueSize, boundingBoxesLatch);
   detectionImagePublisher_ =
       nodeHandle_.advertise<sensor_msgs::Image>(detectionImageTopicName, detectionImageQueueSize, detectionImageLatch);
-
+  
+  // publis 3d bbox with uv-detector
+  marker_pub = nodeHandle_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1);
+	bboxes_pub = nodeHandle_.advertise<darknet_ros_msgs::BoundingBox3DArray>("Bounding_Box3D", 1);
   // Action servers.
   std::string checkForObjectsActionName;
   nodeHandle_.param("actions/camera_reading/topic", checkForObjectsActionName, std::string("check_for_objects"));
@@ -444,7 +447,7 @@ void YoloObjectDetector::call_uv_detector(cv::Mat depth, vector<Rect> &bbox)
   for (int i=0;i<this->uv_detector.bounding_box_D.size();i++){
     bbox.push_back(this->uv_detector.bounding_box_D[i]);
   }
-  this->uv_detector.display_depth();
+  // this->uv_detector.display_depth();
 
   
 // point coordinate
@@ -467,7 +470,7 @@ void YoloObjectDetector::call_uv_detector(cv::Mat depth, vector<Rect> &bbox)
   // visualization using bounding boxes
   visualization_msgs::Marker line;
   visualization_msgs::MarkerArray lines;
-  line.header.frame_id = "/camera_link";
+  line.header.frame_id = "camera_link";
   line.type = visualization_msgs::Marker::LINE_LIST;
   line.action = visualization_msgs::Marker::ADD;
   
@@ -557,8 +560,9 @@ void YoloObjectDetector::call_uv_detector(cv::Mat depth, vector<Rect> &bbox)
     BBox.size.y = y_width;
     BBox.size.z = z_width;
     BBoxes.boxes.push_back(BBox);
-
   }
+  marker_pub.publish(lines);
+	bboxes_pub.publish(BBoxes);
 }
 
 void* YoloObjectDetector::fetchInThread() {

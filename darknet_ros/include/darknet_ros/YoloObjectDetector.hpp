@@ -145,6 +145,11 @@ class YoloObjectDetector {
   //! ROS node handle.
   ros::NodeHandle nodeHandle_;
 
+  // publish bboxes
+  ros::Publisher marker_pub;
+	ros::Publisher bboxes_pub;
+
+
   //! Class labels.
   int numClasses_;
   std::vector<std::string> classLabels_;

@@ -167,7 +167,7 @@ void UVdetector::readdata(queue<Mat> depthq)
     double maxVal; 
     Point minLoc; 
     Point maxLoc;
-    resize(this->depth, this->depth, Size(50,50));
+    // resize(this->depth, this->depth, Size(50,50));
     minMaxLoc( this->depth, &minVal, &maxVal, &minLoc, &maxLoc );   
 }
 
