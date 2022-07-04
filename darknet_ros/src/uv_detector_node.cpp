@@ -17,8 +17,8 @@
 #include <queue>
 // #include <librealsense2/rs.hpp>
 
-#include "uv_detector_node/BoundingBox3D.h"
-#include "uv_detector_node/BoundingBox3DArray.h"
+#include "darknet_ros_msgs/BoundingBox3D.h"
+#include "darknet_ros_msgs/BoundingBox3DArray.h"
 
 
 using namespace cv; 
@@ -39,7 +39,7 @@ class my_detector
 			
 			// Topic published
 			marker_pub = nh.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1);
-			bboxes_pub = nh.advertise<uv_detector_node::BoundingBox3DArray>("Bounding_Box3D", 1);
+			bboxes_pub = nh.advertise<darknet_ros_msgs::BoundingBox3DArray>("Bounding_Box3D", 1);
 			// obstacles = n.advertise<std_msgs::Float64MultiArray>("Obstacles", 1000); // working on
 
 		}  
@@ -100,147 +100,147 @@ class my_detector
 //															--->x
 
 			// visualization using bounding boxes
-			visualization_msgs::Marker line;
-			visualization_msgs::MarkerArray lines;
-			line.header.frame_id = "camera_link";
-			line.type = visualization_msgs::Marker::LINE_LIST;
-			line.action = visualization_msgs::Marker::ADD;
+		// 	visualization_msgs::Marker line;
+		// 	visualization_msgs::MarkerArray lines;
+		// 	line.header.frame_id = "camera_link";
+		// 	line.type = visualization_msgs::Marker::LINE_LIST;
+		// 	line.action = visualization_msgs::Marker::ADD;
 			
-			line.scale.x = 0.1;
+		// 	line.scale.x = 0.1;
 
-			// Line list is red
-			line.color.r = 1.0;
-			line.color.a = 1.0;
-			line.lifetime = ros::Duration(0.05);
+		// 	// Line list is red
+		// 	line.color.r = 1.0;
+		// 	line.color.a = 1.0;
+		// 	line.lifetime = ros::Duration(0.05);
 
-			// vision msgs
-			uv_detector_node::BoundingBox3D BBox;
-			uv_detector_node::BoundingBox3DArray BBoxes;
-			BBoxes.header.stamp = ros::Time::now();
-			BBoxes.header.frame_id = 'camera_link';
+		// 	// vision msgs
+		// 	darknet_ros_msgs::BoundingBox3D BBox;
+		// 	darknet_ros_msgs::BoundingBox3DArray BBoxes;
+		// 	BBoxes.header.stamp = ros::Time::now();
+		// 	BBoxes.header.frame_id = 'camera_link';
 
-			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
+		// 	for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
 				
-				// visualization msgs
+		// 		// visualization msgs
 
-				float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
-				float y = uv_detector.box3Ds[i].y / 1000.;
-				float z = uv_detector.box3Ds[i].z / 1000.;
+		// 		float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
+		// 		float y = uv_detector.box3Ds[i].y / 1000.;
+		// 		float z = uv_detector.box3Ds[i].z / 1000.;
 
-				float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
-				float y_width = uv_detector.box3Ds[i].y_width / 1000.;
-				float z_width = uv_detector.box3Ds[i].z_width / 1000.;
+		// 		float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
+		// 		float y_width = uv_detector.box3Ds[i].y_width / 1000.;
+		// 		float z_width = uv_detector.box3Ds[i].z_width / 1000.;
 
-				vector<geometry_msgs::Point> verts;
-				geometry_msgs::Point p;
-				// vertice 0
-				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-				verts.push_back(p);
-				// vertice 1
-				p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-				verts.push_back(p);
-				// vertice 2
-				p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-				verts.push_back(p);
-				// vertice 3
-				p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-				verts.push_back(p);
-				// vertice 4
-				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-				verts.push_back(p);
-				// vertice 5
-				p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-				verts.push_back(p);
-				// vertice 6
-				p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-				verts.push_back(p);
-				// vertice 7
-				p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-				verts.push_back(p);
+		// 		vector<geometry_msgs::Point> verts;
+		// 		geometry_msgs::Point p;
+		// 		// vertice 0
+		// 		p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+		// 		verts.push_back(p);
+		// 		// vertice 1
+		// 		p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+		// 		verts.push_back(p);
+		// 		// vertice 2
+		// 		p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+		// 		verts.push_back(p);
+		// 		// vertice 3
+		// 		p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+		// 		verts.push_back(p);
+		// 		// vertice 4
+		// 		p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+		// 		verts.push_back(p);
+		// 		// vertice 5
+		// 		p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+		// 		verts.push_back(p);
+		// 		// vertice 6
+		// 		p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+		// 		verts.push_back(p);
+		// 		// vertice 7
+		// 		p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+		// 		verts.push_back(p);
 				
 				
-				int vert_idx[12][2] = {
-					{0,1},
-					{1,2},
-					{2,3},
-					{0,3},
-					{0,4},
-					{1,5},
-					{3,7},
-					{2,6},
-					{4,5},
-					{5,6},
-					{4,7},
-					{6,7}
-				};
+		// 		int vert_idx[12][2] = {
+		// 			{0,1},
+		// 			{1,2},
+		// 			{2,3},
+		// 			{0,3},
+		// 			{0,4},
+		// 			{1,5},
+		// 			{3,7},
+		// 			{2,6},
+		// 			{4,5},
+		// 			{5,6},
+		// 			{4,7},
+		// 			{6,7}
+		// 		};
 				
-				for (int i=0;i<12;i++){
-					line.points.push_back(verts[vert_idx[i][0]]);
-					line.points.push_back(verts[vert_idx[i][1]]);
-				}
+		// 		for (int i=0;i<12;i++){
+		// 			line.points.push_back(verts[vert_idx[i][0]]);
+		// 			line.points.push_back(verts[vert_idx[i][1]]);
+		// 		}
 				
-				lines.markers.push_back(line);
-				line.id++;
+		// 		lines.markers.push_back(line);
+		// 		line.id++;
 
-				// vision msgs
-				BBox.center.position.x = x;
-				BBox.center.position.y = y;
-				BBox.center.position.z = z;
+		// 		// vision msgs
+		// 		BBox.center.position.x = x;
+		// 		BBox.center.position.y = y;
+		// 		BBox.center.position.z = z;
 
-				BBox.size.x = x_width;
-				BBox.size.y = y_width;
-				BBox.size.z = z_width;
-				BBoxes.boxes.push_back(BBox);
+		// 		BBox.size.x = x_width;
+		// 		BBox.size.y = y_width;
+		// 		BBox.size.z = z_width;
+		// 		BBoxes.boxes.push_back(BBox);
 
-			}
-			marker_pub.publish(lines);
-			bboxes_pub.publish(BBoxes);
+		// 	}
+		// 	marker_pub.publish(lines);
+		// 	bboxes_pub.publish(BBoxes);
 
 
 			
 
 
 
-			// visualization using sphere
-			visualization_msgs::Marker marker;
-			visualization_msgs::MarkerArray markers;
+		// 	// visualization using sphere
+		// 	visualization_msgs::Marker marker;
+		// 	visualization_msgs::MarkerArray markers;
 			
-			marker.header.frame_id = "camera_link";
-			marker.id = 0;
-			marker.type = visualization_msgs::Marker::SPHERE;
-			marker.action = visualization_msgs::Marker::ADD;
-			double u_r, u_l, d_b, d_t;
-			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++)
-			{
-				cout<<"----------------------------"<<endl;
-				cout<<"Object "<< i <<": "<<endl;
-				cout<<"x: " << uv_detector.box3Ds[i].x<<endl;
-				cout<<"y: " <<uv_detector.box3Ds[i].y<<endl;
-				cout<<"z: " <<uv_detector.box3Ds[i].z<<endl;
+		// 	marker.header.frame_id = "camera_link";
+		// 	marker.id = 0;
+		// 	marker.type = visualization_msgs::Marker::SPHERE;
+		// 	marker.action = visualization_msgs::Marker::ADD;
+		// 	double u_r, u_l, d_b, d_t;
+		// 	for(int i = 0; i < this->uv_detector.box3Ds.size(); i++)
+		// 	{
+		// 		cout<<"----------------------------"<<endl;
+		// 		cout<<"Object "<< i <<": "<<endl;
+		// 		cout<<"x: " << uv_detector.box3Ds[i].x<<endl;
+		// 		cout<<"y: " <<uv_detector.box3Ds[i].y<<endl;
+		// 		cout<<"z: " <<uv_detector.box3Ds[i].z<<endl;
 
-				marker.lifetime = ros::Duration(0.05);
-				marker.pose.position.x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
-				marker.pose.position.y = uv_detector.box3Ds[i].y / 1000.;
-				marker.pose.position.z = uv_detector.box3Ds[i].z / 1000.;
+		// 		marker.lifetime = ros::Duration(0.05);
+		// 		marker.pose.position.x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
+		// 		marker.pose.position.y = uv_detector.box3Ds[i].y / 1000.;
+		// 		marker.pose.position.z = uv_detector.box3Ds[i].z / 1000.;
 
-				marker.scale.x = uv_detector.box3Ds[i].x_width / 1000.;
-				marker.scale.y = uv_detector.box3Ds[i].y_width / 1000.;
-				marker.scale.z = uv_detector.box3Ds[i].z_width / 1000.;
+		// 		marker.scale.x = uv_detector.box3Ds[i].x_width / 1000.;
+		// 		marker.scale.y = uv_detector.box3Ds[i].y_width / 1000.;
+		// 		marker.scale.z = uv_detector.box3Ds[i].z_width / 1000.;
 
-				marker.pose.orientation.x = 0.0;
-				marker.pose.orientation.y = 0.0;
-				marker.pose.orientation.z = 0.0;
-				marker.pose.orientation.w = 1.0;
+		// 		marker.pose.orientation.x = 0.0;
+		// 		marker.pose.orientation.y = 0.0;
+		// 		marker.pose.orientation.z = 0.0;
+		// 		marker.pose.orientation.w = 1.0;
 				
-				marker.color.a = 0.7; // Don't forget to set the alpha!
-				marker.color.r = abs(sin(i));
-				marker.color.g = abs(cos(i));
-				marker.color.b = (abs(cos(i)) + abs(sin(i))) / 2;
-				markers.markers.push_back(marker);
-				marker.id++;
-			}
+		// 		marker.color.a = 0.7; // Don't forget to set the alpha!
+		// 		marker.color.r = abs(sin(i));
+		// 		marker.color.g = abs(cos(i));
+		// 		marker.color.b = (abs(cos(i)) + abs(sin(i))) / 2;
+		// 		markers.markers.push_back(marker);
+		// 		marker.id++;
+		// 	}
 
-			marker_pub.publish(markers);
+		// 	marker_pub.publish(markers);
 		}
 
 	private:  

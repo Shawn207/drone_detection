@@ -406,9 +406,7 @@ void* YoloObjectDetector::detectInThread() {
           // uv-detector for depth
           // x,y of bbox is percentage of width/height
           cv::Mat box = camDepthCopy_(cv::Range(int(ymin*frameHeight_),int(ymax*frameHeight_)), cv::Range(int(xmin*frameWidth_),int(xmax*frameWidth_)));
-          // std::cout<<i<<" "<<demoNames_[j]<<" "<<box.rows<<" "<<box.cols<<std::endl;
           call_uv_detector(box, bbox_from_uv);
-          // std::cout<<"bbox num: "<<bbox_from_uv.size()<<std::endl;
         }
       }
     }
@@ -466,101 +464,101 @@ void YoloObjectDetector::call_uv_detector(cv::Mat depth, vector<Rect> &bbox)
 //															|/y
 //															--->x
 
-  // // visualization using bounding boxes
-  // visualization_msgs::Marker line;
-  // visualization_msgs::MarkerArray lines;
-  // line.header.frame_id = "/camera_link";
-  // line.type = visualization_msgs::Marker::LINE_LIST;
-  // line.action = visualization_msgs::Marker::ADD;
+  // visualization using bounding boxes
+  visualization_msgs::Marker line;
+  visualization_msgs::MarkerArray lines;
+  line.header.frame_id = "/camera_link";
+  line.type = visualization_msgs::Marker::LINE_LIST;
+  line.action = visualization_msgs::Marker::ADD;
   
-  // line.scale.x = 0.1;
+  line.scale.x = 0.1;
 
-  // // Line list is red
-  // line.color.r = 1.0;
-  // line.color.a = 1.0;
-  // line.lifetime = ros::Duration(0.05);
+  // Line list is red
+  line.color.r = 1.0;
+  line.color.a = 1.0;
+  line.lifetime = ros::Duration(0.05);
 
-  // // vision msgs
+  // vision msgs
 
-  // darknet_ros_msgs::BoundingBox3D BBox;
-  // darknet_ros_msgs::BoundingBox3DArray BBoxes;
-  // BBoxes.header.stamp = ros::Time::now();
-  // BBoxes.header.frame_id = 'camera_link';
+  darknet_ros_msgs::BoundingBox3D BBox;
+  darknet_ros_msgs::BoundingBox3DArray BBoxes;
+  BBoxes.header.stamp = ros::Time::now();
+  BBoxes.header.frame_id = 'camera_link';
 
-  // for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
+  for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
     
-  //   // visualization msgs
+    // visualization msgs
 
-  //   float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
-  //   float y = uv_detector.box3Ds[i].y / 1000.;
-  //   float z = uv_detector.box3Ds[i].z / 1000.;
+    float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
+    float y = uv_detector.box3Ds[i].y / 1000.;
+    float z = uv_detector.box3Ds[i].z / 1000.;
 
-  //   float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
-  //   float y_width = uv_detector.box3Ds[i].y_width / 1000.;
-  //   float z_width = uv_detector.box3Ds[i].z_width / 1000.;
+    float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
+    float y_width = uv_detector.box3Ds[i].y_width / 1000.;
+    float z_width = uv_detector.box3Ds[i].z_width / 1000.;
 
-  //   vector<geometry_msgs::Point> verts;
-  //   geometry_msgs::Point p;
-  //   // vertice 0
-  //   p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 1
-  //   p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 2
-  //   p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 3
-  //   p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 4
-  //   p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 5
-  //   p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 6
-  //   p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 7
-  //   p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
+    vector<geometry_msgs::Point> verts;
+    geometry_msgs::Point p;
+    // vertice 0
+    p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+    verts.push_back(p);
+    // vertice 1
+    p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+    verts.push_back(p);
+    // vertice 2
+    p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+    verts.push_back(p);
+    // vertice 3
+    p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+    verts.push_back(p);
+    // vertice 4
+    p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+    verts.push_back(p);
+    // vertice 5
+    p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+    verts.push_back(p);
+    // vertice 6
+    p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+    verts.push_back(p);
+    // vertice 7
+    p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+    verts.push_back(p);
     
     
-  //   int vert_idx[12][2] = {
-  //     {0,1},
-  //     {1,2},
-  //     {2,3},
-  //     {0,3},
-  //     {0,4},
-  //     {1,5},
-  //     {3,7},
-  //     {2,6},
-  //     {4,5},
-  //     {5,6},
-  //     {4,7},
-  //     {6,7}
-  //   };
+    int vert_idx[12][2] = {
+      {0,1},
+      {1,2},
+      {2,3},
+      {0,3},
+      {0,4},
+      {1,5},
+      {3,7},
+      {2,6},
+      {4,5},
+      {5,6},
+      {4,7},
+      {6,7}
+    };
     
-  //   for (int i=0;i<12;i++){
-  //     line.points.push_back(verts[vert_idx[i][0]]);
-  //     line.points.push_back(verts[vert_idx[i][1]]);
-  //   }
+    for (int i=0;i<12;i++){
+      line.points.push_back(verts[vert_idx[i][0]]);
+      line.points.push_back(verts[vert_idx[i][1]]);
+    }
     
-  //   lines.markers.push_back(line);
-  //   line.id++;
+    lines.markers.push_back(line);
+    line.id++;
 
-  //   // vision msgs
-  //   BBox.center.position.x = x;
-  //   BBox.center.position.y = y;
-  //   BBox.center.position.z = z;
+    // vision msgs
+    BBox.center.position.x = x;
+    BBox.center.position.y = y;
+    BBox.center.position.z = z;
 
-  //   BBox.size.x = x_width;
-  //   BBox.size.y = y_width;
-  //   BBox.size.z = z_width;
-  //   BBoxes.boxes.push_back(BBox);
+    BBox.size.x = x_width;
+    BBox.size.y = y_width;
+    BBox.size.z = z_width;
+    BBoxes.boxes.push_back(BBox);
 
-  // }
+  }
 }
 
 void* YoloObjectDetector::fetchInThread() {

@@ -1,6 +1,6 @@
 <launch>
   <arg name="serial_no"           default=""/>
-  <arg name="json_file_path"      default="$(find realsense2_camera)/setting/realsense_high_acc.json"/>
+  <!-- <arg name="json_file_path"      default="$(find realsense2_camera)/setting/realsense_high_acc.json"/> -->
   <arg name="camera"              default="camera"/>
   <arg name="tf_prefix"           default="$(arg camera)"/>
 
@@ -38,5 +38,5 @@
   <arg name="align_depth"         default="true"/>
 
   <arg name="filters"             default=""/>
-  <node pkg="darknet_ros" type="darknet_ros_uv_detector" name="darknet_ros_uv_detector"/>
+  <node pkg="darknet_ros" type="darknet_ros_uv_detector" name="darknet_ros_uv_detector" output="screen"/>
 </launch>

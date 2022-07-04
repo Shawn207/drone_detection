@@ -167,7 +167,7 @@ void UVdetector::readdata(queue<Mat> depthq)
     double maxVal; 
     Point minLoc; 
     Point maxLoc;
-
+    resize(this->depth, this->depth, Size(50,50));
     minMaxLoc( this->depth, &minVal, &maxVal, &minLoc, &maxLoc );   
 }
 
@@ -192,6 +192,7 @@ void UVdetector::extract_U_map()
 {
     // rescale depth map
     Mat depth_rescale;
+    
     resize(this->depth, depth_rescale, Size(),this->col_scale , 1);
     Mat depth_low_res_temp = Mat::zeros(depth_rescale.rows, depth_rescale.cols, CV_8UC1);
 
@@ -200,10 +201,11 @@ void UVdetector::extract_U_map()
     // construct the mask
     Rect mask_depth;
     uint8_t histSize = this->depth.rows / this->row_downsample;
-    uint8_t bin_width = ceil((this->max_dist - this->min_dist) / float(histSize));
-    // initialize U map
+
+    int bin_width = ceil((this->max_dist - this->min_dist) / float(histSize));
+
     this->U_map = Mat::zeros(histSize, depth_rescale.cols, CV_8UC1);
-    
+
     for(int col = 0; col < depth_rescale.cols; col++)
     {
         for(int row = 0; row < depth_rescale.rows; row++)

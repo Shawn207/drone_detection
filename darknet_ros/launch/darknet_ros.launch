@@ -15,7 +15,7 @@
 
   <!-- realsense ros wrapper params -->
   <arg name="serial_no"           default=""/>
-  <arg name="json_file_path"      default="$(find realsense2_camera)/setting/realsense_high_acc.json"/>
+  <!-- <arg name="json_file_path"      default="$(find realsense2_camera)/setting/realsense_high_acc.json"/> -->
   <arg name="camera"              default="camera"/>
   <arg name="tf_prefix"           default="$(arg camera)"/>
 
