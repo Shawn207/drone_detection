@@ -410,7 +410,7 @@ void* YoloObjectDetector::detectInThread() {
         }
       }
     }
-    
+     
     
   }
 
