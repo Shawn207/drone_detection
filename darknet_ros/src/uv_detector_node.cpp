@@ -76,7 +76,7 @@ class my_detector
 			this->uv_detector.readdata(depthq);
 			this->uv_detector.detect();
 			this->uv_detector.track();
-			// this->uv_detector.display_U_map();
+			this->uv_detector.display_U_map();
 			// this->uv_detector.display_bird_view();
 			this->uv_detector.extract_3Dbox();
 			this->uv_detector.display_depth();

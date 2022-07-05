@@ -244,7 +244,7 @@ void UVdetector::extract_bb()
         for(int col = 0; col < this->U_map.cols; col++)
         {
             // is a point of interest
-            if(this->U_map.at<uchar>(row,col) >= u_min)
+            if(this->U_map.at<uchar>(row,col) >= u_min) // num of points at this depth >= u_min
             {
                 // update current line info
                 length_line++;
@@ -274,6 +274,8 @@ void UVdetector::extract_bb()
                         {
                             if(mask[row - 1][c] != 0)
                             {
+                                // initially, toppest parent id is just seg id.
+                                // mask stores seg_ids
                                 if(UVboxes[mask[row - 1][c] - 1].toppest_parent_id < UVboxes.back().toppest_parent_id)
                                 {
                                     UVboxes.back().toppest_parent_id = UVboxes[mask[row - 1][c] - 1].toppest_parent_id;
@@ -471,7 +473,7 @@ void UVdetector::display_U_map()
         }
     } 
     
-    // imshow("U map", this->U_map);
+    imshow("U map", this->U_map);
     waitKey(1);
 }
 
