@@ -269,7 +269,7 @@ class YoloObjectDetector {
 
   void* publishInThread();
 
-  void call_uv_detector(cv::Mat depth, vector<Rect> &bbox);
+  void call_uv_detector(cv::Mat depth, int target_label);
 
 };
 

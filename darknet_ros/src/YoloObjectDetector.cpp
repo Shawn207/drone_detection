@@ -68,6 +68,7 @@ bool YoloObjectDetector::readParameters() {
 
   // Set vector sizes.
   nodeHandle_.param("yolo_model/detection_classes/names", classLabels_, std::vector<std::string>(0));
+
   numClasses_ = classLabels_.size();
   rosBoxes_ = std::vector<std::vector<RosBox_> >(numClasses_);
   rosBoxCounter_ = std::vector<int>(numClasses_);
@@ -110,7 +111,7 @@ void YoloObjectDetector::init() {
   dataPath += "/data";
   data = new char[dataPath.length() + 1];
   strcpy(data, dataPath.c_str());
-
+  printf("DATAPATH is : %s \n", data);
   // Get classes.
   detectionNames = (char**)realloc((void*)detectionNames, (numClasses_ + 1) * sizeof(char*));
   for (int i = 0; i < numClasses_; i++) {
@@ -409,7 +410,7 @@ void* YoloObjectDetector::detectInThread() {
           // uv-detector for depth
           // x,y of bbox is percentage of width/height
           cv::Mat box = camDepthCopy_(cv::Range(int(ymin*frameHeight_),int(ymax*frameHeight_)), cv::Range(int(xmin*frameWidth_),int(xmax*frameWidth_)));
-          call_uv_detector(box, bbox_from_uv);
+          call_uv_detector(box, j);
         }
       }
     }
@@ -436,7 +437,7 @@ void* YoloObjectDetector::detectInThread() {
   running_ = 0;
   return 0;
 }
-void YoloObjectDetector::call_uv_detector(cv::Mat depth, vector<Rect> &bbox)
+void YoloObjectDetector::call_uv_detector(cv::Mat depth, int target_label)
 {
   this->uv_detector.readdepth(depth);
   this->uv_detector.detect();
@@ -444,9 +445,9 @@ void YoloObjectDetector::call_uv_detector(cv::Mat depth, vector<Rect> &bbox)
   // this->uv_detector.display_U_map();
   // this->uv_detector.display_bird_view();
   this->uv_detector.extract_3Dbox();
-  for (int i=0;i<this->uv_detector.bounding_box_D.size();i++){
-    bbox.push_back(this->uv_detector.bounding_box_D[i]);
-  }
+  // for (int i=0;i<this->uv_detector.bounding_box_D.size();i++){
+  //   bbox.push_back(this->uv_detector.bounding_box_D[i]);
+  // }
   // this->uv_detector.display_depth();
 
   
@@ -476,8 +477,13 @@ void YoloObjectDetector::call_uv_detector(cv::Mat depth, vector<Rect> &bbox)
   
   line.scale.x = 0.1;
 
-  // Line list is red
-  line.color.r = 1.0;
+  // Line list is green if the box is generated from yolo box of the target id, otherwise red
+  if (target_label == 0){
+    line.color.g = 1.0;
+  }
+  else{
+    line.color.r = 1.0;
+  }
   line.color.a = 1.0;
   line.lifetime = ros::Duration(0.05);
 
