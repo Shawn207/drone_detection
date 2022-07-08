@@ -22,9 +22,13 @@
 #include <geometry_msgs/Point.h>
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
+#include <geometry_msgs/Pose.h>
 #include <std_msgs/Header.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 // OpenCv
 #include <cv_bridge/cv_bridge.h>
@@ -116,6 +120,8 @@ class YoloObjectDetector {
    */
   void depthCallback(const sensor_msgs::ImageConstPtr& msg);
 
+  void poseCallback(const geometry_msgs::Pose& pose);
+
   /*!
    * Check for objects action goal callback.
    */
@@ -149,6 +155,7 @@ class YoloObjectDetector {
   ros::Publisher marker_pub;
 	ros::Publisher bboxes_pub;
 
+  tf2_ros::Buffer tfBuffer;
 
   //! Class labels.
   int numClasses_;
@@ -163,6 +170,7 @@ class YoloObjectDetector {
   //! ROS subscriber and publisher.
   image_transport::Subscriber imageSubscriber_;
   image_transport::Subscriber depthSubscriber_;
+  ros::Subscriber localizationPoseSubscriber_;
   ros::Publisher objectPublisher_;
   ros::Publisher boundingBoxesPublisher_;
 
@@ -193,6 +201,9 @@ class YoloObjectDetector {
   std_msgs::Header headerBuff_[3];
   image buff_[3];
   image buffLetter_[3];
+  geometry_msgs::Pose poseBuff;
+  tf2::Matrix3x3 rotationBuff;
+
   int buffId_[3];
   int buffIndex_ = 0;
   float fps_ = 0;
@@ -210,6 +221,8 @@ class YoloObjectDetector {
   float* avg_;
   int demoTotal_ = 0;
   double demoTime_;
+  
+
 
   RosBox_* roiBoxes_;
   bool viewImage_;
@@ -221,8 +234,11 @@ class YoloObjectDetector {
   std_msgs::Header imageHeader_;
   cv::Mat camImageCopy_;
   cv::Mat camDepthCopy_;
+  geometry_msgs::Pose poseCopy_; 
+  tf2::Matrix3x3 rotationCopy_;
   boost::shared_mutex mutexImageCallback_;
   boost::shared_mutex mutexDepthCallback_;
+  boost::shared_mutex mutexPoseCallback_;
 
   bool imageStatus_ = false;
   boost::shared_mutex mutexImageStatus_;

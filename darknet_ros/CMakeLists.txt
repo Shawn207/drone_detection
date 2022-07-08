@@ -67,7 +67,9 @@ find_package(catkin REQUIRED
     image_transport
     nodelet
     sensor_msgs 
+    geometry_msgs
     message_generation
+    tf2_ros
 )
 
 # Enable OPENCV in darknet
@@ -85,6 +87,7 @@ catkin_package(
     actionlib
     rospy
     std_msgs
+    geometry_msgs
     darknet_ros_msgs
     image_transport
     nodelet
@@ -175,7 +178,7 @@ if (CUDA_FOUND)
   #   src/yolo_object_detector_node.cpp
   # )
 
-  cuda_add_executable(${PROJECT_NAME} src/yolo_object_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp )
+  cuda_add_executable(${PROJECT_NAME} src/yolo_object_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp ${tf2_LIABRARIES})
 
   cuda_add_executable( ${PROJECT_NAME}_uv_detector src/uv_detector_node.cpp include/darknet_ros/UV_detector.cpp include/darknet_ros/kalman_filter.cpp)
 
@@ -202,6 +205,9 @@ else()
 
 
 endif()
+
+add_executable(${PROJECT_NAME}_pub_pose src/pub_pose_node.cpp)
+target_link_libraries(${PROJECT_NAME}_pub_pose ${catkin_LIBRARIES} ${tf2_ros_LIABRARIES})
 
 target_link_libraries(${PROJECT_NAME}_lib
   m

@@ -11,6 +11,7 @@
 #include "darknet_ros/UV_detector.h"
 #include "darknet_ros_msgs/BoundingBox3D.h"
 #include "darknet_ros_msgs/BoundingBox3DArray.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -39,6 +40,9 @@ YoloObjectDetector::YoloObjectDetector(ros::NodeHandle nh)
   if (!readParameters()) {
     ros::requestShutdown();
   }
+  // tf buffer
+  
+  // tf2_ros::TransformListener tfListener(tfBuffer);
 
   init();
 }
@@ -87,6 +91,8 @@ void YoloObjectDetector::init() {
   std::string weightsModel;
 
   // uv detector for 3d box
+
+  
 
   // Threshold of object detection.
   float thresh;
@@ -151,11 +157,11 @@ void YoloObjectDetector::init() {
   nodeHandle_.param("publishers/detection_image/topic", detectionImageTopicName, std::string("detection_imagezzzz"));
   nodeHandle_.param("publishers/detection_image/queue_size", detectionImageQueueSize, 1);
   nodeHandle_.param("publishers/detection_image/latch", detectionImageLatch, true);
-  ROS_INFO("before subscriber:");
-  std::cout<<cameraTopicName<<std::endl;
+
   imageSubscriber_ = imageTransport_.subscribe(cameraTopicName, cameraQueueSize, &YoloObjectDetector::cameraCallback, this);
   depthSubscriber_ = imageTransport_.subscribe(depthTopicName, cameraQueueSize, &YoloObjectDetector::depthCallback,this);
-  ROS_INFO("after subscrber");
+  // localizationPoseSubscriber_ = nodeHandle_.subscribe("/pose",1, &YoloObjectDetector::poseCallback, this);
+
   objectPublisher_ =
       nodeHandle_.advertise<darknet_ros_msgs::ObjectCount>(objectDetectorTopicName, objectDetectorQueueSize, objectDetectorLatch);
   boundingBoxesPublisher_ =
@@ -163,6 +169,8 @@ void YoloObjectDetector::init() {
   detectionImagePublisher_ =
       nodeHandle_.advertise<sensor_msgs::Image>(detectionImageTopicName, detectionImageQueueSize, detectionImageLatch);
   
+
+
   // publis 3d bbox with uv-detector
   marker_pub = nodeHandle_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1);
 	bboxes_pub = nodeHandle_.advertise<darknet_ros_msgs::BoundingBox3DArray>("Bounding_Box3D", 1);
@@ -238,7 +246,24 @@ void YoloObjectDetector::depthCallback(const sensor_msgs::ImageConstPtr&msg)
     }
     // cv::imshow("Depth",camDepthCopy_);
   }
+}
 
+void YoloObjectDetector::poseCallback(const geometry_msgs::Pose &pose){
+  ROS_INFO("pose is received");
+  // printf("positoin x, y, z: %f, %f, %f \n", pose.position.x, pose.position.y, pose.position.z);
+  // printf("quaternion x, y, z, 2: %f, %f, %f, %f \n", pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+
+  {
+    // copy value??
+    boost::unique_lock<boost::shared_mutex> lockPoseCallback(mutexPoseCallback_);
+    poseCopy_ = pose;
+
+
+
+    // tf2::Quaternion quat_tf;
+    // tf2::fromMsg(poseCopy_,quat_tf);
+    // printf("The quaternion representation is %s %s %s %s." , quat_tf[0], quat_tf[1], quat_tf[2], quat_tf[3]);
+  }
 }
 
 void YoloObjectDetector::checkForObjectsActionGoalCB() {
@@ -464,6 +489,12 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
   BBoxes.header.stamp = ros::Time::now();
   BBoxes.header.frame_id = 'camera_link';
 
+  // create a point stamped to apply transformation
+  // geometry_msgs::PointStamped point_camera;
+  // geometry_msgs::PointStamped point_world;
+  // point_camera.header.frame_id = "camera";
+  
+  // point_camera.header.stamp = ros::Time::now();
   for(int i = 0; i < box3Ds.size(); i++){
     
     // visualization msgs
@@ -507,29 +538,73 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
 
     vector<geometry_msgs::Point> verts;
     geometry_msgs::Point p;
+    geometry_msgs::TransformStamped transformStamped;
+    // try{
+    // transformStamped = tfBuffer.lookupTransform("camera", "world",
+    //                           ros::Time(0));
+    // printf("translation x,y,z : %f", transformStamped.transform.translation.x,transformStamped.transform.translation.y,transformStamped.transform.translation.z);
+    // }
+    // catch (tf2::TransformException &ex) {
+    //   ROS_WARN("%s",ex.what());
+    //   ros::Duration(1.0).sleep();
+    //   continue;
+    // }
+
     // vertice 0
     p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-    verts.push_back(p);
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
+    // verts.push_back(p);
     // vertice 1
     p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
     verts.push_back(p);
     // vertice 2
     p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
     verts.push_back(p);
     // vertice 3
     p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
     verts.push_back(p);
     // vertice 4
     p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-    verts.push_back(p);
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
+    // verts.push_back(p);
     // vertice 5
     p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
     verts.push_back(p);
     // vertice 6
     p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
     verts.push_back(p);
     // vertice 7
     p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+    // point_camera.header.stamp = ros::Time::now();
+    // point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+    // point_world = tfBuffer.transform(point_camera, "world");
+    // p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
     verts.push_back(p);
     
     
@@ -578,131 +653,17 @@ void YoloObjectDetector::call_uv_detector(cv::Mat depth, int target_label, vecto
   this->uv_detector.display_U_map();
   // this->uv_detector.display_bird_view();
   this->uv_detector.extract_3Dbox();
-  for (int i=0;i<this->uv_detector.box3Ds.size();i++){
-    bbox.push_back(this->uv_detector.box3Ds[i]);
-    id.push_back(target_label);
-  }
+  // for (int i=0;i<this->uv_detector.box3Ds.size();i++){
+  //   bbox.push_back(this->uv_detector.box3Ds[i]);
+  //   id.push_back(target_label);
+  // }
+  // push the 1st box only to remove unrelated background
+  bbox.push_back(this->uv_detector.box3Ds[0]);
+  id.push_back(target_label);
   this->uv_detector.display_depth();
 
   
-// point coordinate
-//											5 _ _ _ 6
-//											| \     | \
-//											|   4 _ _ _ 7
-//											|   |   |   |
-//											|   |   |   |
-//											|   |   |   |
-//											|   |   |   |
-//											|   |   |   |
-//											1 _ | _ 2   |
-//											\ |     \ |
-//					   	 						0 _ _ _ 3
-//
-//															^z
-//															|/y
-//															--->x
 
-  // // visualization using bounding boxes
-  // visualization_msgs::Marker line;
-  // visualization_msgs::MarkerArray lines;
-  // line.header.frame_id = "camera_link";
-  // line.type = visualization_msgs::Marker::LINE_LIST;
-  // line.action = visualization_msgs::Marker::ADD;
-  
-  // line.scale.x = 0.1;
-
-  // // Line list is green if the box is generated from yolo box of the target id, otherwise red
-  // if (target_label == 0){
-  //   line.color.g = 1.0;
-  // }
-  // else{
-  //   line.color.r = 1.0;
-  // }
-  // line.color.a = 1.0;
-  // line.lifetime = ros::Duration(0.05);
-
-  // // vision msgs
-
-  // darknet_ros_msgs::BoundingBox3D BBox;
-  // darknet_ros_msgs::BoundingBox3DArray BBoxes;
-  // BBoxes.header.stamp = ros::Time::now();
-  // BBoxes.header.frame_id = 'camera_link';
-
-  // for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
-    
-  //   // visualization msgs
-
-  //   float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
-  //   float y = uv_detector.box3Ds[i].y / 1000.;
-  //   float z = uv_detector.box3Ds[i].z / 1000.;
-
-  //   float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
-  //   float y_width = uv_detector.box3Ds[i].y_width / 1000.;
-  //   float z_width = uv_detector.box3Ds[i].z_width / 1000.;
-
-  //   vector<geometry_msgs::Point> verts;
-  //   geometry_msgs::Point p;
-  //   // vertice 0
-  //   p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 1
-  //   p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 2
-  //   p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 3
-  //   p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 4
-  //   p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 5
-  //   p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 6
-  //   p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
-  //   // vertice 7
-  //   p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
-  //   verts.push_back(p);
-    
-    
-  //   int vert_idx[12][2] = {
-  //     {0,1},
-  //     {1,2},
-  //     {2,3},
-  //     {0,3},
-  //     {0,4},
-  //     {1,5},
-  //     {3,7},
-  //     {2,6},
-  //     {4,5},
-  //     {5,6},
-  //     {4,7},
-  //     {6,7}
-  //   };
-    
-  //   for (int i=0;i<12;i++){
-  //     line.points.push_back(verts[vert_idx[i][0]]);
-  //     line.points.push_back(verts[vert_idx[i][1]]);
-  //   }
-    
-  //   lines.markers.push_back(line);
-  //   line.id++;
-
-  //   // vision msgs
-  //   BBox.center.position.x = x;
-  //   BBox.center.position.y = y;
-  //   BBox.center.position.z = z;
-
-  //   BBox.size.x = x_width;
-  //   BBox.size.y = y_width;
-  //   BBox.size.z = z_width;
-  //   BBoxes.boxes.push_back(BBox);
-  // }
-  // marker_pub.publish(lines);
-	// bboxes_pub.publish(BBoxes);
 }
 
 void* YoloObjectDetector::fetchInThread() {
@@ -713,6 +674,9 @@ void* YoloObjectDetector::fetchInThread() {
     buff_[buffIndex_] = mat_to_image(imageAndHeader.image);
     headerBuff_[buffIndex_] = imageAndHeader.header;
     buffId_[buffIndex_] = actionId_;
+
+    // remember to lock the localization pose!!!!!!!!!!!!!!!!!!!!!!!!
+
   }
   rgbgr_image(buff_[buffIndex_]);
   letterbox_image_into(buff_[buffIndex_], net_->w, net_->h, buffLetter_[buffIndex_]); // image in buff_ is now in buffLetter, buff_ is dealocated
@@ -800,10 +764,10 @@ void YoloObjectDetector::yolo() {
     buff_[0] = mat_to_image(imageAndHeader.image);
     headerBuff_[0] = imageAndHeader.header;
   }
-  // {
-  //   boost::shared_lock<boost::shared_mutex> lock(mutexDepthCallback_);
-
-  // }
+  {
+    boost::shared_lock<boost::shared_mutex> lock(mutexPoseCallback_);
+    // listener(tfbuffer);
+  }
   buff_[1] = copy_image(buff_[0]);
   buff_[2] = copy_image(buff_[0]);
   headerBuff_[1] = headerBuff_[0];

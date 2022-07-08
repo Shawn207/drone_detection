@@ -18,6 +18,7 @@
   <depend>roscpp</depend>
   <depend>rospy</depend>
   <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>image_transport</depend>
   <depend>cv_bridge</depend>
   <depend>sensor_msgs</depend>
@@ -25,6 +26,7 @@
   <depend>darknet_ros_msgs</depend>
   <depend>actionlib</depend>
   <depend>nodelet</depend>
+  <depend>tf2</depend>
 
   <!-- Test dependencies -->
   <test_depend>rostest</test_depend>
