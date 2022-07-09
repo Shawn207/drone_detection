@@ -11,7 +11,7 @@
 #include "darknet_ros/UV_detector.h"
 #include "darknet_ros_msgs/BoundingBox3D.h"
 #include "darknet_ros_msgs/BoundingBox3DArray.h"
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -355,6 +355,8 @@ detection* YoloObjectDetector::avgPredictions(network* net, int* nboxes) {
 }
 
 void* YoloObjectDetector::detectInThread() {
+  point_camera.header.stamp = ros::Time::now();// make sure the 
+
   running_ = 1;
   float nms = .4;
 
@@ -471,14 +473,6 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
   BBoxes.header.stamp = ros::Time::now();
   BBoxes.header.frame_id = 'camera_link';
 
-  geometry_msgs::PointStamped point_camera;
-  geometry_msgs::PointStamped point_world;
-  point_camera.header.frame_id = "camera";
-  point_camera.header.stamp = ros::Time::now();
-
-  // geometry_msgs::TransformStamped transformStamped;
-  // transformStamped = tfBuffer.lookupTransform("camera", "world",
-  //                             ros::Time(0));
   for(int i = 0; i < box3Ds.size(); i++){
     
     // visualization msgs
@@ -526,9 +520,11 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
     p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
     point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
     // this->tfListener.waitForTransform("camera","world",point_camera.header.stamp,ros::Duration(5.0));
+    // ROS_INFO("Check current time stamp!!");
     while (!tfBuffer.canTransform("world","camera",point_camera.header.stamp,ros::Duration(5.0))){
       ROS_INFO("waiting for transform");
     }
+
     point_world = tfBuffer.transform(point_camera, "world");
     p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
     verts.push_back(p);
@@ -694,14 +690,22 @@ void YoloObjectDetector::setupNetwork(char* cfgfile, char* weightfile, char* dat
 
 void YoloObjectDetector::yolo() {
   const auto wait_duration = std::chrono::milliseconds(2000);
+  point_camera.header.frame_id = "camera";
   while (!getImageStatus() && !getDepthStatus()) {
+    
     printf("Waiting for image.\n");
     if (!isNodeRunning()) {
       return;
     }
     std::this_thread::sleep_for(wait_duration);
   }
+  
+  // std::stringstream ss;
+  // ss << point_camera.header.stamp.sec << "." << point_camera.header.stamp.nsec;
+  // std::cout << "time " <<ss.str() << std::endl;
+  
 
+  
   std::thread detect_thread;
   std::thread fetch_thread;
 

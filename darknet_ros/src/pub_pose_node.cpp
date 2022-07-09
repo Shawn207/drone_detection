@@ -29,11 +29,12 @@ int main(int argc, char** argv) {
     while(ros::ok())
     {
         i++;
-        tfs.transform.translation.x = i;
+        tfs.transform.translation.x = 1;
         ros::Time start = ros::Time::now();
         ros::Duration time(3.0);
         while(ros::Time::now()-start <= time){
             tfs.header.stamp = ros::Time::now();
+            // ROS_INFO("Check current time stamp!!");
             broadcaster.sendTransform(tfs);
         }
         // printf(

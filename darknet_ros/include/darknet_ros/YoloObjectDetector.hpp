@@ -29,6 +29,7 @@
 #include <std_msgs/Header.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 // OpenCv
 #include <cv_bridge/cv_bridge.h>
@@ -157,6 +158,10 @@ class YoloObjectDetector {
 
   tf2_ros::Buffer tfBuffer;
   tf2_ros::TransformListener tfListener;
+
+  // create point stamped for point coords transformation
+  geometry_msgs::PointStamped point_camera;
+  geometry_msgs::PointStamped point_world;
 
   //! Class labels.
   int numClasses_;
