@@ -156,6 +156,7 @@ class YoloObjectDetector {
 	ros::Publisher bboxes_pub;
 
   tf2_ros::Buffer tfBuffer;
+  tf2_ros::TransformListener tfListener;
 
   //! Class labels.
   int numClasses_;
