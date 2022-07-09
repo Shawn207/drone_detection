@@ -440,6 +440,10 @@ void UVdetector::extract_3Dbox()
         int Y_w = (depth_in_near + depth_in_far) / 2;
         im_frame_y = (y_down + y_up) / 2;
         im_frame_y_width = y_down - y_up;
+
+        // x, y coord in original full image, instead of crop
+        im_frame_x += x0;
+        im_frame_y += y0;
         
         // image frame to world frame transformation
         // x axis is remain the same, y in world frame is the depth direction, z in world frame 

@@ -77,6 +77,9 @@ class UVdetector
     vector<Rect> bounding_box_D; // bounding boxes on the depth map (not resized)
     // main output/topic published
     vector<box3D> box3Ds; // 3D bounding boxes in world frame for output
+    // x,y coords of topleft corner of incoming crop from yolo
+    int x0;
+    int y0;
 
     float fx; // focal length
     float fy;

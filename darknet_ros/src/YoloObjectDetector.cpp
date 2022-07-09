@@ -418,7 +418,9 @@ void* YoloObjectDetector::detectInThread() {
         // pass into uv detector
         if (dets[i].prob[j] > demoThresh_){
           // uv-detector for depth
-          // x,y of bbox is percentage of width/height
+          // x,y of bbox is percentage of width/heigh
+          x_tl = xmin*frameWidth_;
+          y_tl = ymin*frameHeight_;
           cv::Mat box = camDepthCopy_(cv::Range(int(ymin*frameHeight_),int(ymax*frameHeight_)), cv::Range(int(xmin*frameWidth_),int(xmax*frameWidth_)));
           call_uv_detector(box, j, bbox_from_uv, id_from_uv);
         }
@@ -611,6 +613,8 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
 
 void YoloObjectDetector::call_uv_detector(cv::Mat depth, int target_label, vector<box3D> &bbox, vector<int> &id)
 {
+  this->uv_detector.x0 = x_tl;
+  this->uv_detector.y0 = y_tl;
   this->uv_detector.readdepth(depth);
   this->uv_detector.detect();
   // this->uv_detector.track();

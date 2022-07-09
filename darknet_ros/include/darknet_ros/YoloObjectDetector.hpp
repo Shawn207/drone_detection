@@ -258,6 +258,9 @@ class YoloObjectDetector {
   int actionId_;
   boost::shared_mutex mutexActionStatus_;
 
+  // topleft x,y coord of yolo 2d bbox as input of uvdetector to locate uv_bbox
+  int x_tl,y_tl;
+  
   // double getWallTime();
 
   int sizeNetwork(network* net);
