@@ -60,10 +60,12 @@ YoloObjectDetector::~YoloObjectDetector() {
 
 bool YoloObjectDetector::readParameters() {
   // Load common parameters.
-  nodeHandle_.param("image_view/enable_opencv", viewImage_, true);
+  nodeHandle_.param("image_view/enable_opencv", viewImage_, false);
+  std::cout<<"+++++++++++++++++++++++++++"<<viewImage_<<"++++++++++++++++++++++++++++++";
   nodeHandle_.param("image_view/wait_key_delay", waitKeyDelay_, 3);
   nodeHandle_.param("image_view/enable_console_output", enableConsoleOutput_, false);
-
+  // NO WINDOWS SHOW IMG ON DRONES
+  // viewImage_ = false;
   // Check if Xserver is running on Linux.
   if (XOpenDisplay(NULL)) {
     // Do nothing!
@@ -521,11 +523,10 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
     // vertice 0
     p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
     point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
-    // this->tfListener.waitForTransform("camera","world",point_camera.header.stamp,ros::Duration(5.0));
-    // ROS_INFO("Check current time stamp!!");
     while (!tfBuffer.canTransform("world","camera",point_camera.header.stamp,ros::Duration(5.0))){
       ROS_INFO("waiting for transform");
     }
+    // ROS_INFO("transform is ready!!");
 
     point_world = tfBuffer.transform(point_camera, "world");
     p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;

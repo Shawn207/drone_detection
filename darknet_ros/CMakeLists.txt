@@ -51,7 +51,10 @@ endif ( X11_FOUND )
 
 # Find rquired packeges
 find_package(Boost REQUIRED COMPONENTS thread)
-find_package(OpenCV 4.2.0 REQUIRED)
+# find_package(OpenCV 4.2.0 REQUIRED) # works for Desktop
+# drone requires opencv 3.4.3
+# find_package(OpenCV 3.4.3 REQUIRED)
+set(OpenCV_DIR /home/cerlab/Packages/opencv-3.4.3/build)
 # find_package(realsense2 2.50.0)
 include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
