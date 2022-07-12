@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
     while(ros::ok())
     {
         i++;
-        // q.setRPY(0,0,1.57*i);
+        q.setRPY(0,0,1.57*i);
         tfs.transform.rotation.x = q.getX();
         tfs.transform.rotation.y = q.getY();
         tfs.transform.rotation.z = q.getZ();

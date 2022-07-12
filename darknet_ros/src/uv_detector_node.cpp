@@ -120,7 +120,7 @@ class my_detector
 			// visualization using bounding boxes
 			visualization_msgs::Marker line;
 			visualization_msgs::MarkerArray lines;
-			line.header.frame_id = "camera";
+			line.header.frame_id = "world";
 			line.type = visualization_msgs::Marker::LINE_LIST;
 			line.action = visualization_msgs::Marker::ADD;
 			
@@ -135,7 +135,7 @@ class my_detector
 			darknet_ros_msgs::BoundingBox3D BBox;
 			darknet_ros_msgs::BoundingBox3DArray BBoxes;
 			BBoxes.header.stamp = ros::Time::now();
-			BBoxes.header.frame_id = 'camera';
+			BBoxes.header.frame_id = 'world';
 
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
 				

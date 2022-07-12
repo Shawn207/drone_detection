@@ -459,7 +459,7 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
   // visualization using bounding boxes
   visualization_msgs::Marker line;
   visualization_msgs::MarkerArray lines;
-  line.header.frame_id = "camera";
+  line.header.frame_id = "world";
   line.type = visualization_msgs::Marker::LINE_LIST;
   line.action = visualization_msgs::Marker::ADD;
   
@@ -475,7 +475,7 @@ void YoloObjectDetector::visualize_bbox(vector<box3D> &box3Ds, vector<int> &id){
   darknet_ros_msgs::BoundingBox3D BBox;
   darknet_ros_msgs::BoundingBox3DArray BBoxes;
   BBoxes.header.stamp = ros::Time::now();
-  BBoxes.header.frame_id = 'camera';
+  BBoxes.header.frame_id = 'world';
 
   for(int i = 0; i < box3Ds.size(); i++){
     
