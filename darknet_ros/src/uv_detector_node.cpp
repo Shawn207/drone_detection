@@ -15,6 +15,9 @@
 #include <./darknet_ros/kalman_filter.h>
 #include <Eigen/Dense>
 #include <queue>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 // #include <librealsense2/rs.hpp>
 
 #include "darknet_ros_msgs/BoundingBox3D.h"
@@ -27,7 +30,12 @@ using namespace std;
 class my_detector
 {  
 	public:  
-		my_detector()  
+		tf2_ros::Buffer tfBuffer;
+  		tf2_ros::TransformListener tfListener;
+		// create point stamped for point coords transformation
+		geometry_msgs::PointStamped point_camera;
+		geometry_msgs::PointStamped point_world;
+		my_detector():tfListener(tfBuffer)  
 		{  	
 			image_transport::ImageTransport it(nh);
 			
@@ -37,6 +45,12 @@ class my_detector
 			depsub = it.subscribe("/camera/aligned_depth_to_color/image_raw", 1, &my_detector::depthCallback,this);
 			imgsub = it.subscribe("/camera/color/image_raw", 1, &my_detector::imageCallback,this);
 			
+			ros::Time time = ros::Time::now();
+			ros::Duration duration(5.0);
+			while(ros::Time::now() - time < duration){
+				ROS_INFO("Wating. Give some tfBuffer some time to populate transformations");
+			}
+
 			// Topic published
 			marker_pub = nh.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1);
 			bboxes_pub = nh.advertise<darknet_ros_msgs::BoundingBox3DArray>("Bounding_Box3D", 1);
@@ -66,6 +80,10 @@ class my_detector
 				ROS_ERROR("Could not convert from '%s' to 'TYPE_16UC1'.", e.what());
 			return;
 			}
+			
+			this->point_camera.header.frame_id = "camera";
+			this->point_camera.header.stamp = ros::Time::now();
+
 			cv::Mat depth = cv_ptr->image;
 			if (depthq.size()>2) {
 				depthq.pop();
@@ -102,7 +120,7 @@ class my_detector
 			// visualization using bounding boxes
 			visualization_msgs::Marker line;
 			visualization_msgs::MarkerArray lines;
-			line.header.frame_id = "camera_link";
+			line.header.frame_id = "camera";
 			line.type = visualization_msgs::Marker::LINE_LIST;
 			line.action = visualization_msgs::Marker::ADD;
 			
@@ -117,7 +135,7 @@ class my_detector
 			darknet_ros_msgs::BoundingBox3D BBox;
 			darknet_ros_msgs::BoundingBox3DArray BBoxes;
 			BBoxes.header.stamp = ros::Time::now();
-			BBoxes.header.frame_id = 'camera_link';
+			BBoxes.header.frame_id = 'camera';
 
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
 				
@@ -131,33 +149,90 @@ class my_detector
 				float y_width = uv_detector.box3Ds[i].y_width / 1000.;
 				float z_width = uv_detector.box3Ds[i].z_width / 1000.;
 
+				// vector<geometry_msgs::Point> verts;
+				// geometry_msgs::Point p;
+				// // vertice 0
+				// p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+				// verts.push_back(p);
+				// // vertice 1
+				// p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+				// verts.push_back(p);
+				// // vertice 2
+				// p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+				// verts.push_back(p);
+				// // vertice 3
+				// p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+				// verts.push_back(p);
+				// // vertice 4
+				// p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+				// verts.push_back(p);
+				// // vertice 5
+				// p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+				// verts.push_back(p);
+				// // vertice 6
+				// p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+				// verts.push_back(p);
+				// // vertice 7
+				// p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+				// verts.push_back(p);
+				
 				vector<geometry_msgs::Point> verts;
 				geometry_msgs::Point p;
 				// vertice 0
 				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				while (!tfBuffer.canTransform("world","camera",point_camera.header.stamp,ros::Duration(5.0))){
+				ROS_INFO("waiting for transform");
+				}
+				// ROS_INFO("transform is ready!!");
+
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 1
 				p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 2
 				p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z-z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 3
 				p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z-z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 4
 				p.x = x-x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 5
 				p.x = x-x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 6
 				p.x = x+x_width / 2.; p.y = y+y_width / 2.; p.z = z+z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
 				// vertice 7
 				p.x = x+x_width / 2.; p.y = y-y_width / 2.; p.z = z+z_width / 2.;
+				point_camera.point.x = p.x; point_camera.point.y = p.y; point_camera.point.z = p.z;
+				point_world = tfBuffer.transform(point_camera, "world");
+				p.x = point_world.point.x; p.y =  point_world.point.y; p.z = point_world.point.z;
 				verts.push_back(p);
-				
+
+
 				
 				int vert_idx[12][2] = {
 					{0,1},

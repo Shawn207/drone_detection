@@ -158,6 +158,9 @@ UVdetector::UVdetector()
     this->fy = 422.5233;
     this->px = 426.6043;
     this->py = 240.3157;
+
+    this->x0 = 0;
+    this->y0 = 0;
 }
 
 void UVdetector::readdata(queue<Mat> depthq)
