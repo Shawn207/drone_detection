@@ -451,12 +451,12 @@ void UVdetector::extract_3Dbox()
         // image frame to world frame transformation
         // x axis is remain the same, y in world frame is the depth direction, z in world frame 
         // is align with -y in image frame 
-        curr_box.x =  (im_frame_x-this->px)*Y_w/this->fx;
+        curr_box.y =  -(im_frame_x-this->px)*Y_w/this->fx;
         curr_box.z = -(im_frame_y-this->py)*Y_w/this->fy;
-        curr_box.x_width = im_frame_x_width*Y_w/this->fx;
+        curr_box.y_width = im_frame_x_width*Y_w/this->fx;
         curr_box.z_width = im_frame_y_width*Y_w/this->fy;
-        curr_box.y = Y_w;
-        curr_box.y_width = depth_of_depth;
+        curr_box.x = Y_w;
+        curr_box.x_width = depth_of_depth;
         box3Ds.push_back(curr_box);
     }
 }
