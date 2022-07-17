@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_FLAGS "-Wall -Wno-unused-result -Wno-unknown-pragmas -Wno-unused-variable -Wfatal-errors -fPIC ${CMAKE_C_FLAGS}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+
+
 # debug
 # set(CMAKE_CXX_FLAGS "-g") 
 
@@ -98,6 +100,7 @@ catkin_package(
     Boost
 )
 
+catkin_install_python(PROGRAMS scripts/person_detector.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 include_directories(
   ${DARKNET_PATH}/src
   ${DARKNET_PATH}/include

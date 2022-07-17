@@ -6,6 +6,8 @@
 #include <vector>
 #include <darknet_ros/kalman_filter.h>
 #include <queue>
+
+
 using namespace std;
 using namespace cv;
 
@@ -77,9 +79,16 @@ class UVdetector
     vector<Rect> bounding_box_D; // bounding boxes on the depth map (not resized)
     // main output/topic published
     vector<box3D> box3Ds; // 3D bounding boxes in world frame for output
+    vector<box3D> person_box3Ds;// 3D bboxes in world frame for persons
+    
     // x,y coords of topleft corner of incoming crop from yolo
     int x0;
     int y0;
+
+    //test
+    int testx;
+    int testy;
+    int testby;
 
     float fx; // focal length
     float fy;

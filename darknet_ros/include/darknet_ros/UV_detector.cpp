@@ -229,6 +229,7 @@ void UVdetector::extract_U_map()
     // smooth the U map
     
     GaussianBlur(this->U_map, this->U_map, Size(5,9), 10, 10);
+    // printf("rescaled depth map: %d", depth_rescale.at<unsigned short>(testy,testx));
 }
 
 void UVdetector::extract_bb()
@@ -448,6 +449,9 @@ void UVdetector::extract_3Dbox()
         im_frame_x += x0;
         im_frame_y += y0;
         
+        testx = im_frame_x;
+        testy = im_frame_y;
+        testby = bin_index_small;
         // image frame to world frame transformation
         // x axis is remain the same, y in world frame is the depth direction, z in world frame 
         // is align with -y in image frame 
@@ -458,6 +462,7 @@ void UVdetector::extract_3Dbox()
         curr_box.x = Y_w;
         curr_box.x_width = depth_of_depth;
         box3Ds.push_back(curr_box);
+        // printf("depth in near: %f \n",depth_in_near);
     }
 }
     
@@ -479,7 +484,10 @@ void UVdetector::display_U_map()
             circle(this->U_map, Point2f(this->bounding_box_U[b].tl().x + 0.5 * this->bounding_box_U[b].width, this->bounding_box_U[b].br().y ), 2, Scalar(0, 0, 255), 5, 8, 0);
         }
     } 
-    
+    for (int yy=-20 ; yy<21 ; yy++)
+    {
+        // printf("U map at %d , %d , is %d\n", yy+testby, testx, this->U_map.at<uchar>(yy+testby, testx));
+    }
     imshow("U map", this->U_map);
     waitKey(1);
 }
