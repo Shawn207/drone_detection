@@ -46,7 +46,7 @@ class my_detector
 			// rectsub = nh.subscribe("/person_detector/human_rect",1,&my_detector::rectCallback,this);
 			depsub = it.subscribe("/camera/aligned_depth_to_color/image_raw", 1, &my_detector::depthCallback,this);
 			imgsub = it.subscribe("/camera/color/image_raw", 1, &my_detector::imageCallback,this);
-			// rectsub = nh.subscribe("/person_detector/human_rect",1,&my_detector::rectCallback,this);
+			rectsub = nh.subscribe("/person_detector/human_rect",1,&my_detector::rectCallback,this);
 			
 			ros::Time time = ros::Time::now();
 			ros::Duration duration(5.0);
@@ -279,22 +279,22 @@ class my_detector
 				BBox.size.z = z_width;
 				BBoxes.boxes.push_back(BBox);
 
-				// bool person = false;
-				// Rect uv_box2d = Rect( uv_detector.bounding_box_U[i].tl().x ,uv_detector.bounding_box_U[i].tl().y, uv_detector.bounding_box_U[i].br().x - uv_detector.bounding_box_U[i].tl().x, uv_detector.bounding_box_U[i].br().y -uv_detector.bounding_box_U[i].tl().y);
-				// for (int j = 1 ; j < bboxes_human.bounding_boxes.size() ; j++) // first box is meaningless.
-				// {
-				// 	human_rect = Rect(bboxes_human.bounding_boxes[i].xmin,bboxes_human.bounding_boxes[i].ymin, bboxes_human.bounding_boxes[i].xmax-bboxes_human.bounding_boxes[i].xmin, bboxes_human.bounding_boxes[i].ymax-bboxes_human.bounding_boxes[i].ymin);
-				// 	Rect overlap = human_rect & uv_box2d;
-				// 	// printf("uv_box x,y,w,h %d,%d,%d,%d",uv_box2d.x, uv_box2d.y, uv_box2d.width,uv_box2d.height);
-				// 	// printf("overlap x,y,w,h %d,%d,%d,%d",overlap.x, overlap.y, overlap.width,overlap.height);
-				// 	person = person ||(overlap.area() >= 0.5 * uv_box2d.area());
-				// 	// printf("overlap, uv_box2d %d, %d\n",overlap.area(), uv_box2d.area() );
-				// }
-				// if (person)
-				// {
-				// 	uv_detector.person_box3Ds.push_back(uv_detector.box3Ds[i]);
-				// 	ROS_INFO("person detected\n");
-				// }
+				bool person = false;
+				Rect uv_box2d = Rect( uv_detector.bounding_box_U[i].tl().x ,uv_detector.bounding_box_U[i].tl().y, uv_detector.bounding_box_U[i].br().x - uv_detector.bounding_box_U[i].tl().x, uv_detector.bounding_box_U[i].br().y -uv_detector.bounding_box_U[i].tl().y);
+				for (int j = 1 ; j < bboxes_human.bounding_boxes.size() ; j++) // first box is meaningless.
+				{
+					human_rect = Rect(bboxes_human.bounding_boxes[i].xmin,bboxes_human.bounding_boxes[i].ymin, bboxes_human.bounding_boxes[i].xmax-bboxes_human.bounding_boxes[i].xmin, bboxes_human.bounding_boxes[i].ymax-bboxes_human.bounding_boxes[i].ymin);
+					Rect overlap = human_rect & uv_box2d;
+					// printf("uv_box x,y,w,h %d,%d,%d,%d",uv_box2d.x, uv_box2d.y, uv_box2d.width,uv_box2d.height);
+					// printf("overlap x,y,w,h %d,%d,%d,%d",overlap.x, overlap.y, overlap.width,overlap.height);
+					person = person ||(overlap.area() >= 0.5 * uv_box2d.area());
+					// printf("overlap, uv_box2d %d, %d\n",overlap.area(), uv_box2d.area() );
+				}
+				if (person)
+				{
+					uv_detector.person_box3Ds.push_back(uv_detector.box3Ds[i]);
+					ROS_INFO("person detected\n");
+				}
 
 			}
 			marker_pub.publish(lines);
@@ -305,46 +305,46 @@ class my_detector
 
 
 
-			// // visualization using sphere
-			// visualization_msgs::Marker marker;
-			// visualization_msgs::MarkerArray markers;
+			// visualization using sphere
+			visualization_msgs::Marker marker;
+			visualization_msgs::MarkerArray markers;
 			
-			// marker.header.frame_id = "camera_link";
-			// marker.id = 0;
-			// marker.type = visualization_msgs::Marker::SPHERE;
-			// marker.action = visualization_msgs::Marker::ADD;
-			// double u_r, u_l, d_b, d_t;
-			// for(int i = 0; i < this->uv_detector.person_box3Ds.size(); i++)
-			// {
-			// 	// cout<<"----------------------------"<<endl;
-			// 	// cout<<"Object "<< i <<": "<<endl;
-			// 	// cout<<"x: " << uv_detector.person_box3Ds[i].x<<endl;
-			// 	// cout<<"y: " <<uv_detector.person_box3Ds[i].y<<endl;
-			// 	// cout<<"z: " <<uv_detector.person_box3Ds[i].z<<endl;
+			marker.header.frame_id = "camera_link";
+			marker.id = 0;
+			marker.type = visualization_msgs::Marker::SPHERE;
+			marker.action = visualization_msgs::Marker::ADD;
+			double u_r, u_l, d_b, d_t;
+			for(int i = 0; i < this->uv_detector.person_box3Ds.size(); i++)
+			{
+				// cout<<"----------------------------"<<endl;
+				// cout<<"Object "<< i <<": "<<endl;
+				// cout<<"x: " << uv_detector.person_box3Ds[i].x<<endl;
+				// cout<<"y: " <<uv_detector.person_box3Ds[i].y<<endl;
+				// cout<<"z: " <<uv_detector.person_box3Ds[i].z<<endl;
 
-			// 	marker.lifetime = ros::Duration(0.05);
-			// 	marker.pose.position.x = uv_detector.person_box3Ds[i].x / 1000.; // convert from mm to m
-			// 	marker.pose.position.y = uv_detector.person_box3Ds[i].y / 1000.;
-			// 	marker.pose.position.z = uv_detector.person_box3Ds[i].z / 1000.;
+				marker.lifetime = ros::Duration(0.05);
+				marker.pose.position.x = uv_detector.person_box3Ds[i].x / 1000.; // convert from mm to m
+				marker.pose.position.y = uv_detector.person_box3Ds[i].y / 1000.;
+				marker.pose.position.z = uv_detector.person_box3Ds[i].z / 1000.;
 
-			// 	marker.scale.x = uv_detector.person_box3Ds[i].x_width / 1000.;
-			// 	marker.scale.y = uv_detector.person_box3Ds[i].y_width / 1000.;
-			// 	marker.scale.z = uv_detector.person_box3Ds[i].z_width / 1000.;
+				marker.scale.x = uv_detector.person_box3Ds[i].x_width / 1000.;
+				marker.scale.y = uv_detector.person_box3Ds[i].y_width / 1000.;
+				marker.scale.z = uv_detector.person_box3Ds[i].z_width / 1000.;
 
-			// 	marker.pose.orientation.x = 0.0;
-			// 	marker.pose.orientation.y = 0.0;
-			// 	marker.pose.orientation.z = 0.0;
-			// 	marker.pose.orientation.w = 1.0;
+				marker.pose.orientation.x = 0.0;
+				marker.pose.orientation.y = 0.0;
+				marker.pose.orientation.z = 0.0;
+				marker.pose.orientation.w = 1.0;
 				
-			// 	marker.color.a = 0.7; // Don't forget to set the alpha!
-			// 	marker.color.r = abs(sin(i));
-			// 	marker.color.g = abs(cos(i));
-			// 	marker.color.b = (abs(cos(i)) + abs(sin(i))) / 2;
-			// 	markers.markers.push_back(marker);
-			// 	marker.id++;
-			// }
+				marker.color.a = 0.7; // Don't forget to set the alpha!
+				marker.color.r = abs(sin(i));
+				marker.color.g = abs(cos(i));
+				marker.color.b = (abs(cos(i)) + abs(sin(i))) / 2;
+				markers.markers.push_back(marker);
+				marker.id++;
+			}
 
-			// person_marker_pub.publish(markers);
+			person_marker_pub.publish(markers);
 			uv_detector.person_box3Ds.clear();
 		}
 
