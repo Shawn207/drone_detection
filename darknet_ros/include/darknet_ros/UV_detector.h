@@ -6,13 +6,15 @@
 #include <vector>
 #include <darknet_ros/kalman_filter.h>
 #include <queue>
-
+#include <Eigen/Dense>
 
 using namespace std;
 using namespace cv;
+using Eigen::MatrixXd;
 
 struct box3D
 {
+    float Vx, Vy;
     float x, y, z;
     float x_width, y_width, z_width;
 };
@@ -49,17 +51,20 @@ class UVtracker
     deque<deque<box3D>> pre_box_3D_history;
     float overlap_threshold; // threshold to determind tracked or not
 
-    // track the sum of widths on x,y,z direction of each box
-    vector<float> x_width_sum;
-    vector<float> y_width_sum;
-    vector<float> z_width_sum;
+    // track the sum of predicted velocity for calculating avg
+    std::deque<std::deque<MatrixXd>> pre_V;
+    std::deque<std::deque<MatrixXd>> now_V;
+    
+    // count num of moving in all identification result
+    std::deque<std::deque<int>> pre_count;
+    std::deque<std::deque<int>> now_count;
 
     // store the fixed size of each box if it keep showing fully in FOV
     vector<box3D> fixed_box3D;
 
     // flag to fix box size
-    vector<bool> pre_fix;
-    vector<bool> now_fix;
+    // vector<bool> pre_fix;
+    // vector<bool> now_fix;
 
     // constructor
     UVtracker();
@@ -68,7 +73,7 @@ class UVtracker
     void read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D> &box_3D);
 
     // check tracking status
-    void check_status();
+    void check_status(vector<box3D> &box_3D);
 
     
 };

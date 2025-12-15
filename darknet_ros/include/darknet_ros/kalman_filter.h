@@ -11,7 +11,7 @@ class kalman_filter
     private:
     // members
     bool is_initialized;
-    MatrixXd states;
+    // MatrixXd states;
     MatrixXd A; // state matrix
     MatrixXd B; // input matrix
     MatrixXd H; // observation matrix
@@ -20,6 +20,7 @@ class kalman_filter
     MatrixXd R; // obsevation noise
 
     public:
+    MatrixXd states;
     // constructor
     kalman_filter();
 

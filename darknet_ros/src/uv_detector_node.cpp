@@ -108,7 +108,7 @@ class my_detector
 			// this->uv_detector.display_bird_view();
 			this->uv_detector.extract_3Dbox();
 			this->uv_detector.track();
-			this->uv_detector.display_depth();
+			// this->uv_detector.display_depth();
 
 			
 // // point coordinate
@@ -138,6 +138,8 @@ class my_detector
 				bbox2D.ymin = this->uv_detector.bounding_box_D[i].tl().y;
 				bbox2D.xmax = this->uv_detector.bounding_box_D[i].br().x;
 				bbox2D.ymax = this->uv_detector.bounding_box_D[i].br().y;
+				bbox2D.Vx = this->uv_detector.box3Ds[i].Vx;
+				bbox2D.Vy = this->uv_detector.box3Ds[i].Vy;
 				bbox2Ds.bounding_boxes.push_back(bbox2D);
 			}
 			bbox2Ds.header.stamp = ros::Time::now();

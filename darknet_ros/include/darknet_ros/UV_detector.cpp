@@ -41,7 +41,7 @@ UVbox merge_two_UVbox(UVbox father, UVbox son)
 
 UVtracker::UVtracker()
 {
-    this->overlap_threshold = 0.51;
+    this->overlap_threshold = 0.4;
 }
 
 void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D> &box_3D)
@@ -55,122 +55,187 @@ void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D
     this->now_box_3D_history.clear();
     this->now_box_3D_history.resize(now_bb.size());
     // fix size flag history
-    this->pre_fix = this->now_fix;
-    this->now_fix.clear();
-    this->now_fix.resize(now_bb.size());
-    
+    // this->pre_fix = this->now_fix;
+    // this->now_fix.clear();
+    // this->now_fix.resize(now_bb.size());
     // kalman filters
     this->pre_filter = this->now_filter;
     this->now_filter.clear();
     this->now_filter.resize(now_bb.size());
+    // sum of velocity prediction
+    this->pre_V = this->now_V;
+    this->now_V.clear();
+    this->now_V.resize(now_bb.size());
+    // count of moving result
+    // this->pre_count = this->now_count;
+    // this->now_count.clear();
+    // this->now_count.resize(now_bb.size());
     // bounding box
     this->pre_bb = this->now_bb;
     this->now_bb = now_bb;
     this->now_bb_D = now_bb_D;
     this->now_box_3D = box_3D;
     // pre_history only stores 30 frames record for each track
-    for (int i=0 ; i<this->pre_history.size() ; i++) {
-        if (this->pre_history[i].size() > 30) {
-            this->pre_history[i].erase(this->pre_history[i].begin());
-        }
-    }  
-    // for (int i=0 ; i<this->pre_box_3D_history.size() ; i++) {
-    //     // for each box track, fix the size after showing up for 30 frames
-    //     if (this->pre_box_3D_history[i].size() > 30) {
-    //         x_width_sum[i] -= this->pre_box_3D_history[i][0].x_width;
-    //         y_width_sum[i] -= this->pre_box_3D_history[i][0].y_width;
-    //         z_width_sum[i] -= this->pre_box_3D_history[i][0].z_width;
-    //         this->pre_box_3D_history[i].pop_front();
-    //         // update box size to be the average of the previous 30
-    //         // now_box_3D[i].x_width = x_width_sum[i]/30;
-    //         // now_box_3D[i].y_width = z_width_sum[i]/30;
-    //         // now_box_3D[i].z_width = y_width_sum[i]/30;
+    // for (int i=0 ; i<this->pre_history.size() ; i++) {
+    //     if (this->pre_history[i].size() > 10) {
+    //         this->pre_history[i].erase(this->pre_history[i].begin());
+    //     }
+    // }  
 
-    //         // fix box size to be the last one showed fully in FOV
-    //         // also store the value for future 
-    //         if (pre_fix[i]) {
-    //             pre_fix[i] = false;
+    for (int i=0 ; i<this->pre_box_3D_history.size() ; i++) {
+        // for each box track, fix the size after showing up for 30 frames
+        if (this->pre_box_3D_history[i].size() > 10) {
+            this->pre_box_3D_history[i].pop_front();
+            // fix box size to be the last one showed fully in FOV
+            // also store the value for future 
+            // if (pre_fix[i]) {
+            //     pre_fix[i] = false;
+            // }
+            this->now_box_3D[i].x_width = this->pre_box_3D_history[i].back().x_width;
+            this->now_box_3D[i].y_width = this->pre_box_3D_history[i].back().y_width;
+            this->now_box_3D[i].z_width = this->pre_box_3D_history[i].back().z_width;
+
+
+            // keep queue sizes for all queues
+            this->pre_history[i].erase(this->pre_history[i].begin());
+
+        }
+    }   
+
+    // box_3D = this->now_box_3D;
+
+    // keep queue sizes for all queues
+    // for (int i=0 ; i<this->pre_V.size() ; i++) {
+    //     if (this->pre_V[i].size() > 10) {
+    //         this->pre_V[i].pop_front();
+    //         double sum_Vx, sum_Vy;
+    //         for (int j=0 ; j<this->pre_V[i].size() ; j++) {
+    //             sum_Vx += this->pre_V[i][j](0,0);
+    //             sum_Vy += this->pre_V[i][j](1,0);
     //         }
-    //         this->now_box_3D[i].x_width = this->pre_box_3D_history[i].back().x_width;
-    //         this->now_box_3D[i].y_width = this->pre_box_3D_history[i].back().y_width;
-    //         this->now_box_3D[i].z_width = this->pre_box_3D_history[i].back().z_width;
+            
+    //         // printf("queue size: %d\n",this->pre_V[i].size());
+    //         // if (this->pre_V[i].size()>10)
+    //         // {
+    //         //     printf("++++++++++++++++++++++++++++++++++++++++++++++queue size: %d\n",this->pre_V[i].size());
+    //         // }
+    //         // printf("v of box %d in birdview 10mm/s: %f, %f\n",i,sum_Vx/10.0,sum_Vy/10.0 );
+    //         if (std::sqrt(std::pow(sum_Vx/10.0,2) + std::pow(sum_Vy/10.0,2)) < 10) {
+    //             printf("static! %f, %f\n",sum_Vx/10.0,sum_Vy/10.0);
+    //         }
+    //         else {
+    //             printf("move ! %f, %f\n",sum_Vx/10.0,sum_Vy/10.0);
+    //         }
 
     //     }
-    // }   
-    // box_3D = this->now_box_3D;
+    // }
+
+    // printf(" \n");
+    
 }
    
-void UVtracker::check_status()
+void UVtracker::check_status(vector<box3D> &box_3D)
 {
+    int f = 30; // Hz
+    double ts = 1.0 / f; // s
     for(int now_id = 0; now_id < this->now_bb.size(); now_id++)
     {
         bool tracked = false;
         for(int pre_id = 0; pre_id < this->pre_bb.size(); pre_id++)
         {
             Rect overlap = this->now_bb[now_id] & this->pre_bb[pre_id];
-            if(min(overlap.area() / float(this->now_bb[now_id].area()), overlap.area() / float(this->pre_bb[pre_id].area())) >= this->overlap_threshold)
+           
+            float dist = std::sqrt( std::pow((this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width)-(this->pre_bb[pre_id].x + 0.5 * this->pre_bb[pre_id].width),2) + std::pow((this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height-(this->pre_bb[pre_id].y + 0.5 * this->pre_bb[pre_id].height)),2) );
+            float metric = std::sqrt( std::pow(this->now_bb[now_id].width+this->pre_bb[pre_id].width,2) + std::pow(this->now_bb[now_id].height+this->pre_bb[pre_id].height,2) )/2;
+            // printf("now: %f, %f, %f, %f\n",this->now_bb[now_id].x,this->now_bb[now_id].y,this->now_bb[now_id].width,this->now_bb[now_id].height);
+            
+            // printf("dist : %f\n",dist);
+            // printf("metric: %f\n", metric );
+            if(max(overlap.area() / float(this->now_bb[now_id].area()), overlap.area() / float(this->pre_bb[pre_id].area())) >= this->overlap_threshold || dist<=metric)
             {
                 tracked = true;
+                std::cout<<"tracked"<<std::endl;
+                // if (now_id != pre_id) {
+                //     printf("TRACK PAIR: %d ,%d",now_id, pre_id);
+                // }
+                
                 // inherit add current detection to history
                 this->now_history[now_id] = this->pre_history[pre_id];
                 this->now_history[now_id].push_back(Point2f(this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height));
                 // update fix flag
-                this->now_fix[now_id] = this->pre_fix[pre_id];
+                // this->now_fix[now_id] = this->pre_fix[pre_id];
                 // inherit 3d box history 
                 this->now_box_3D_history[now_id] = this->pre_box_3D_history[pre_id];
                 // add current 3D box to box history only if when it is full in the FOV. otherwise, clear the history and track again
                 if (this->now_bb_D[now_id].tl().x>5 && this->now_bb_D[now_id].tl().y>5 && this->now_bb_D[now_id].br().x<635 && this->now_bb_D[now_id].br().y<475) {
                     this->now_box_3D_history[now_id].push_back(this->now_box_3D[now_id]);
-                    // this->x_width_sum[now_id] += this->now_box_3D[now_id].x_width;
-                    // this->y_width_sum[now_id] += this->now_box_3D[now_id].y_width;
-                    // this->z_width_sum[now_id] += this->now_box_3D[now_id].z_width;
                 }
                 // else {
                 //     if (this->pre_box_3D_history.size() > now_id) {
                 //         this->pre_box_3D_history[now_id].clear();
                 //     }
-                //     this->x_width_sum[now_id] = 0.;
-                //     this->y_width_sum[now_id] = 0.;
-                //     this->z_width_sum[now_id] = 0.;
                 // }
+
+                // inherit velocity prediction  
+                this->now_V[now_id] = this->pre_V[pre_id];
                 // add measurement to previous filter
                 this->now_filter[now_id] = this->pre_filter[pre_id];
-                MatrixXd z(4,1); // measurement
-                z << this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height, this->now_bb[now_id].width, this->now_bb[now_id].height;
+                MatrixXd z(6,1); // measurement
+                // printf("z=x,y,w,h: %f, %f, %f, %f\n",this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height, this->now_bb[now_id].width, this->now_bb[now_id].height);
+                // printf("input center %f, %f\n",this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height);
+                // calculate velocity of box centor from pre to now as the measrued velocity
+                double z_vx =((this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width) - (this->pre_bb[pre_id].x + 0.5 * this->pre_bb[pre_id].width))/ts;
+                double z_vy =((this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height) - (this->pre_bb[pre_id].y + 0.5 * this->pre_bb[pre_id].height))/ts;
+                double z_cx = this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width;
+                double z_cy = this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height;
+                double z_bx = this->now_bb[now_id].width;
+                double z_by = this->now_bb[now_id].height;
+                // printf("now %d:x,y,w,h %f,%f,%f,%f\n",now_id, float(this->now_bb[now_id].x),float(this->now_bb[now_id].y),float(this->now_bb[now_id].width),float(this->now_bb[now_id].height));
+                // printf("pre %d:x,y,w,h %f,%f,%f,%f\n",pre_id, float(this->pre_bb[pre_id].x),float(this->pre_bb[pre_id].y),float(this->pre_bb[pre_id].width),float(this->pre_bb[pre_id].height));
+                // printf("input %d : %f,%f\n",now_id, z_vx,z_vy);
+                z << z_cx, z_cy, z_vx, z_vy, z_bx, z_by;
                 MatrixXd u(1,1); // input
-                u << 0;
+                u << 0;   
+                // printf("filter states before: %f,%f,%f,%f\n",this->now_filter[now_id].output(0),this->now_filter[now_id].output(1),this->now_filter[now_id].output(2),this->now_filter[now_id].output(3));
                 // run the filter 
                 this->now_filter[now_id].estimate(z, u);    
+                // this->now_filter[now_id].states(2,0) = (this->now_filter[now_id].states(0,0) - this->pre_filter[pre_id].states(0,0))/ts;
+                // this->now_filter[now_id].states(3,0) = (this->now_filter[now_id].states(1,0) - this->pre_filter[pre_id].states(1,0))/ts;
+                MatrixXd V(2,1);
+                V << this->now_filter[now_id].output(2),this->now_filter[now_id].output(3);
+                // printf("before add: %d ,%d, %d\n",now_bb.size(), pre_bb.size(), this->now_V[now_id].size());
+                // printf("add now id:%d v:%f, %f\n",now_id,V(0,0),V(1,0));
+                this->now_V[now_id].push_back(V);
+                // printf("filter states after: %f,%f,%f,%f\n",this->now_filter[now_id].output(0),this->now_filter[now_id].output(1),this->now_filter[now_id].output(2),this->now_filter[now_id].output(3));
                 break;
             } 
+            else {
+                // printf("ratio: %f, %f\n",overlap.area() / float(this->now_bb[now_id].area()),overlap.area() / float(this->pre_bb[pre_id].area()) );
+                // printf("dist : %f\n",dist);
+                // printf("metric: %f\n", metric );
+            }
         }
-        if(!tracked)
+        if(!tracked)    
         {
+            std::cout<<now_id<<" LOSS TRACK\n"<<std::endl;
             // add current detection to history
             this->now_history[now_id].push_back(Point2f(this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height));
-            this->now_fix[now_id] = true;
-            this->x_width_sum.push_back(0.0);
-            this->y_width_sum.push_back(0.0);
-            this->z_width_sum.push_back(0.0);
+            // this->now_fix[now_id] = true;
+            MatrixXd V(2,1);
+            V << 0.0, 0.0;
+            this->now_V[now_id].push_back(V);
             // add current 3D box to box history only if when it is full in the FOV. otherwise, clear the history and track again
             if (this->now_bb_D[now_id].tl().x>5 && this->now_bb_D[now_id].tl().y>5 && this->now_bb_D[now_id].br().x<635 && this->now_bb_D[now_id].br().y<475) {
                 this->now_box_3D_history[now_id].push_back(this->now_box_3D[now_id]);
-                // this->x_width_sum[now_id] += this->now_box_3D[now_id].x_width;
-                // this->y_width_sum[now_id] += this->now_box_3D[now_id].y_width;
-                // this->z_width_sum[now_id] += this->now_box_3D[now_id].z_width;
             }
             // else {
             //     if (this->pre_box_3D_history.size() > now_id) {
             //         this->pre_box_3D_history[now_id].clear();
             //     }
                 
-            //     this->x_width_sum[now_id] = 0.;
-            //     this->y_width_sum[now_id] = 0.;
-            //     this->z_width_sum[now_id] = 0.;
             // }
             // initialize filter
-            int f = 30; // Hz
-            double ts = 1.0 / f; // s
+            
             
             // model for center filter
             double e_p = 0.4;
@@ -186,34 +251,76 @@ void UVtracker::check_status()
                     0, 0, 0, 0,  0, 1; 
             MatrixXd B(6, 1);
             B <<    0, 0, 0, 0, 0, 0;
-            MatrixXd H(4, 6);
+            MatrixXd H(6,6);
             H <<    1, 0, 0, 0, 0, 0,
                     0, 1, 0, 0, 0, 0,
+                    0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 1, 0, 0,
                     0, 0, 0, 0, 1, 0,
                     0, 0, 0, 0, 0, 1;
             MatrixXd P = MatrixXd::Identity(6, 6) * e_m;
             P(4,4) = e_ms; P(5,5) = e_ms;
             MatrixXd Q = MatrixXd::Identity(6, 6) * e_p;
             Q(4,4) = e_ps; Q(5,5) = e_ps;
-            MatrixXd R = MatrixXd::Identity(4, 4) * e_m;
+            // MatrixXd R = MatrixXd::Identity(4, 4) * e_m;
+            MatrixXd R = MatrixXd::Identity(6, 6) * e_m;
 
             // filter initialization
             MatrixXd states(6,1);
+            // printf("input center %f, %f\n",this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height);
             states << this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height, 0, 0, this->now_bb[now_id].width, this->now_bb[now_id].height;
             kalman_filter my_filter;
-            
+            this->now_filter[now_id] = my_filter;
             this->now_filter[now_id].setup(states,
                             A,
                             B,
                             H,
-                            P,
+                            P,     
                             Q,
                             R);
+            // printf("filter states init: %f,%f,%f,%f",this->now_filter[now_id].output(0),this->now_filter[now_id].output(1),this->now_filter[now_id].output(2),this->now_filter[now_id].output(3));
         }
     }
-}
 
-// UVdetector
+    for (int i=0 ; i<this->now_V.size() ; i++) {
+        if (this->now_V[i].size() > 10) {
+            this->now_V[i].pop_front();
+        }
+        double sum_Vx = 0.0;
+        double sum_Vy = 0.0;
+        // printf("sum_Vx before: %f\n",sum_Vx);
+        for (int j=0 ; j<this->now_V[i].size() ; j++) {
+            sum_Vx += this->now_V[i][j](0,0);
+            sum_Vy += this->now_V[i][j](1,0);
+            // printf(" %f ",this->now_V[i][j](0,0));
+            // if (this->now_V.size() < 10) {
+            //     printf("v stack %d: %f, %f\n",i,this->now_V[i][j](0,0),this->now_V[i][j](1,0));
+            // }
+        }
+        
+        // printf("queue size: %d\n",this->pre_V[i].size());
+        if (this->now_V[i].size()>10)
+        {
+            printf("++++++++++++++++++++++++++++++++++++++++++++++queue size: %d\n",this->now_V[i].size());
+        }
+        // printf("v of box %d in birdview 10mm/s: %f, %f\n",i,sum_Vx/10.0,sum_Vy/10.0 );
+        
+        // take average, convert 10mm/s to m/s
+        // printf("sum_Vx after: %f\n",sum_Vx);
+        // printf("queue length: %d\n",this->now_V[i].size());
+        box_3D[i].Vx = (sum_Vx/this->now_V[i].size())/100;
+        box_3D[i].Vy = (sum_Vy/this->now_V[i].size())/100;
+        if (std::sqrt(std::pow(box_3D[i].Vx,2) + std::pow(box_3D[i].Vy,2)) < 0.3) {
+            printf("%d static! %f, %f\n",i,box_3D[i].Vx,box_3D[i].Vy);
+        }
+        else {
+            printf("%d move ! %f, %f\n",i,box_3D[i].Vx,box_3D[i].Vy);
+        }
+    }
+
+}  
+
+// UVdetector     
 
 UVdetector::UVdetector()
 {
@@ -568,6 +675,8 @@ void UVdetector::display_U_map()
     waitKey(1);
 }
 
+// unit is 10 mm?
+// x, y is bottome left point
 void UVdetector::extract_bird_view()
 {
     // extract bounding boxes in bird's view
@@ -592,7 +701,7 @@ void UVdetector::extract_bird_view()
     cvtColor(this->bird_view, this->bird_view, cv::COLOR_GRAY2RGB);
 }
 
-void UVdetector::display_bird_view()
+void UVdetector::display_bird_view() 
 {
     // center point
     Point2f center = Point2f(this->bird_view.cols / 2, this->bird_view.rows);
@@ -617,7 +726,7 @@ void UVdetector::display_bird_view()
 
     // show
     resize(this->bird_view, this->bird_view, Size(), 0.5, 0.5);
-    // imshow("Bird's View", this->bird_view);
+    imshow("Bird's View", this->bird_view);
     waitKey(1);
 }
 
@@ -637,7 +746,8 @@ void UVdetector::add_tracking_result()
         rectangle(this->bird_view, Rect(estimated_center - 0.5 * bb_size, estimated_center + 0.5 * bb_size), Scalar(0, 255, 0), 3, 8, 0);
         // draw velocity
         Point2f velocity = Point2f(this->tracker.now_filter[b].output(2), this->tracker.now_filter[b].output(3));
-        velocity.y = -velocity.y;
+        velocity.y = -velocity.y;// y direction in birdvie map is in opposite of opencv::line default
+        // printf("velocity in birdview 10mm/s: %f, %f , center x ,y: %f, %f, bbox size x, y:%f, %f\n", velocity.x, -velocity.y, estimated_center.x, estimated_center.y, bb_size.x, bb_size.y);
         line(this->bird_view, estimated_center, estimated_center + velocity, Scalar(255, 255, 255), 3, 8, 0);
         for(int h = 1; h < this->tracker.now_history[b].size(); h++)
         {
@@ -652,12 +762,12 @@ void UVdetector::add_tracking_result()
         }
     }
 }
-
+   
 void UVdetector::track()
 {
     // float before = this->box3Ds[0].x_width;
     this->tracker.read_bb(this->bounding_box_B, this->bounding_box_D, this->box3Ds);
-    this->tracker.check_status();
+    this->tracker.check_status(this->box3Ds);
     this->add_tracking_result();
     // float after = this->box3Ds[0].x_width;
     // printf("verify : %f, %f", before, after);
