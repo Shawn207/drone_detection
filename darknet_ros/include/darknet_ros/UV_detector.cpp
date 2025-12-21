@@ -101,7 +101,7 @@ void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D
 
         }
     }   
-
+    // fix size
     // box_3D = this->now_box_3D;
 
     // keep queue sizes for all queues
@@ -181,8 +181,6 @@ void UVtracker::check_status(vector<box3D> &box_3D)
                 // add measurement to previous filter
                 this->now_filter[now_id] = this->pre_filter[pre_id];
                 MatrixXd z(6,1); // measurement
-                // printf("z=x,y,w,h: %f, %f, %f, %f\n",this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height, this->now_bb[now_id].width, this->now_bb[now_id].height);
-                // printf("input center %f, %f\n",this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width, this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height);
                 // calculate velocity of box centor from pre to now as the measrued velocity
                 double z_vx =((this->now_bb[now_id].x + 0.5 * this->now_bb[now_id].width) - (this->pre_bb[pre_id].x + 0.5 * this->pre_bb[pre_id].width))/ts;
                 double z_vy =((this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height) - (this->pre_bb[pre_id].y + 0.5 * this->pre_bb[pre_id].height))/ts;
@@ -190,23 +188,14 @@ void UVtracker::check_status(vector<box3D> &box_3D)
                 double z_cy = this->now_bb[now_id].y + 0.5 * this->now_bb[now_id].height;
                 double z_bx = this->now_bb[now_id].width;
                 double z_by = this->now_bb[now_id].height;
-                // printf("now %d:x,y,w,h %f,%f,%f,%f\n",now_id, float(this->now_bb[now_id].x),float(this->now_bb[now_id].y),float(this->now_bb[now_id].width),float(this->now_bb[now_id].height));
-                // printf("pre %d:x,y,w,h %f,%f,%f,%f\n",pre_id, float(this->pre_bb[pre_id].x),float(this->pre_bb[pre_id].y),float(this->pre_bb[pre_id].width),float(this->pre_bb[pre_id].height));
-                // printf("input %d : %f,%f\n",now_id, z_vx,z_vy);
                 z << z_cx, z_cy, z_vx, z_vy, z_bx, z_by;
                 MatrixXd u(1,1); // input
                 u << 0;   
-                // printf("filter states before: %f,%f,%f,%f\n",this->now_filter[now_id].output(0),this->now_filter[now_id].output(1),this->now_filter[now_id].output(2),this->now_filter[now_id].output(3));
                 // run the filter 
                 this->now_filter[now_id].estimate(z, u);    
-                // this->now_filter[now_id].states(2,0) = (this->now_filter[now_id].states(0,0) - this->pre_filter[pre_id].states(0,0))/ts;
-                // this->now_filter[now_id].states(3,0) = (this->now_filter[now_id].states(1,0) - this->pre_filter[pre_id].states(1,0))/ts;
                 MatrixXd V(2,1);
                 V << this->now_filter[now_id].output(2),this->now_filter[now_id].output(3);
-                // printf("before add: %d ,%d, %d\n",now_bb.size(), pre_bb.size(), this->now_V[now_id].size());
-                // printf("add now id:%d v:%f, %f\n",now_id,V(0,0),V(1,0));
                 this->now_V[now_id].push_back(V);
-                // printf("filter states after: %f,%f,%f,%f\n",this->now_filter[now_id].output(0),this->now_filter[now_id].output(1),this->now_filter[now_id].output(2),this->now_filter[now_id].output(3));
                 break;
             } 
             else {
@@ -544,7 +533,7 @@ void UVdetector::display_depth()
         rectangle(depth_normalized, bounding_box_D[i], cv::Scalar(0, 0, 255), 5, 8, 0);
        // printf("bbox %d br.x coord %d, tl.x coord %d\n",i , bounding_box_D[i].br().x, bounding_box_D[i].tl().x);
     }
-//    imshow("Depth", depth_normalized);
+    imshow("Depth", depth_normalized);
     waitKey(1);
 }
 
@@ -672,6 +661,7 @@ void UVdetector::display_U_map()
             circle(this->U_map, Point2f(this->bounding_box_U[b].tl().x + 0.5 * this->bounding_box_U[b].width, this->bounding_box_U[b].br().y ), 2, Scalar(0, 0, 255), 5, 8, 0);
         }
     } 
+    imshow("U map", this->U_map);
     waitKey(1);
 }
 
