@@ -53,9 +53,9 @@ class my_detector
 			}
 
 			// Topic published
-			marker_pub = nh.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1);
-			bboxes_pub = nh.advertise<darknet_ros_msgs::BoundingBoxesUV2d>("bounding_boxes_2D", 1);
-			box_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("box_visualization_marker", 1);
+			marker_pub = nh.advertise<visualization_msgs::MarkerArray>("visualization_marker", 10);
+			bboxes_pub = nh.advertise<darknet_ros_msgs::BoundingBoxesUV2d>("bounding_boxes_2D", 10);
+			box_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("box_visualization_marker", 10);
 			// obstacles = n.advertise<std_msgs::Float64MultiArray>("Obstacles", 1000); // working on
 
 		}  
