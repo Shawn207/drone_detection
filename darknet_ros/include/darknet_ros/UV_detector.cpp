@@ -65,7 +65,7 @@ void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D
     // sum of velocity prediction
     this->pre_V = this->now_V;
     this->now_V.clear();
-    this->now_V.resize(now_bb.size());
+    this->now_V.resize(now_bb.size());     
     // count of moving result
     // this->pre_count = this->now_count;
     // this->now_count.clear();
@@ -91,10 +91,12 @@ void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D
             // if (pre_fix[i]) {
             //     pre_fix[i] = false;
             // }
+            // printf("pre_box hist size %d",this->pre_box_3D_history.size());
+            // printf("pre_box size %f, %f, %f",this->pre_box_3D_history[i].back().x_width,this->pre_box_3D_history[i].back().y_width,this->pre_box_3D_history[i].back().z_width);
             this->now_box_3D[i].x_width = this->pre_box_3D_history[i].back().x_width;
             this->now_box_3D[i].y_width = this->pre_box_3D_history[i].back().y_width;
             this->now_box_3D[i].z_width = this->pre_box_3D_history[i].back().z_width;
-
+            // printf("now_box size %f, %f, %f",this->now_box_3D[i].x_width,this->now_box_3D[i].y_width,this->now_box_3D[i].z_width);
 
             // keep queue sizes for all queues
             this->pre_history[i].erase(this->pre_history[i].begin());
@@ -102,7 +104,8 @@ void UVtracker::read_bb(vector<Rect> now_bb, vector<Rect> now_bb_D, vector<box3D
         }
     }   
     // fix size
-    // box_3D = this->now_box_3D;
+    box_3D = this->now_box_3D;
+    // printf("box3d size: ",box_3D.x_width,box_3D.y_width,box_3D.z_width);
 
     // keep queue sizes for all queues
     // for (int i=0 ; i<this->pre_V.size() ; i++) {
@@ -297,8 +300,11 @@ void UVtracker::check_status(vector<box3D> &box_3D)
         // take average, convert 10mm/s to m/s
         // printf("sum_Vx after: %f\n",sum_Vx);
         // printf("queue length: %d\n",this->now_V[i].size());
-        box_3D[i].Vx = (sum_Vx/this->now_V[i].size())/100;
-        box_3D[i].Vy = (sum_Vy/this->now_V[i].size())/100;
+
+
+
+        // box_3D[i].Vx = (sum_Vx/this->now_V[i].size())/100;
+        // box_3D[i].Vy = (sum_Vy/this->now_V[i].size())/100;
         if (std::sqrt(std::pow(box_3D[i].Vx,2) + std::pow(box_3D[i].Vy,2)) < 0.3) {
             printf("%d static! %f, %f\n",i,box_3D[i].Vx,box_3D[i].Vy);
         }

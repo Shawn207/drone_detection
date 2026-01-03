@@ -132,6 +132,19 @@ class my_detector
 			darknet_ros_msgs::BoundingBoxUV2d bbox2D;
 			darknet_ros_msgs::BoundingBoxesUV2d bbox2Ds;
 			for (int i=0 ; i< this->uv_detector.bounding_box_D.size() ; i++) {
+				float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
+				float y = uv_detector.box3Ds[i].y / 1000.;
+				float z = uv_detector.box3Ds[i].z / 1000.;
+
+				float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
+				float y_width = uv_detector.box3Ds[i].y_width / 1000.;
+				float z_width = uv_detector.box3Ds[i].z_width / 1000.;
+				if (x_width>1.2 || y_width>1.2 || z_width>2.0) {
+					continue;
+				}
+				if (x_width<0.3 || y_width<0.3 && z_width<1.0) {
+					continue;
+				}
 				bbox2D.header.stamp = ros::Time::now();
 				bbox2D.header.frame_id = "camera_link";
 				bbox2D.xmin = this->uv_detector.bounding_box_D[i].tl().x;
@@ -166,10 +179,10 @@ class my_detector
 			// darknet_ros_msgs::BoundingBox3D BBox_camera;
 			// darknet_ros_msgs::BoundingBox3DArray BBoxes_camera;
 			// BBoxes.header.stamp = ros::Time::now();
-			// BBoxes.header.frame_id = 'camera_link';
+			// BBoxes.header.frame_id = 'camera_link';   
 
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++){
-				
+
 				// visualization msgs
 
 				float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
@@ -179,6 +192,13 @@ class my_detector
 				float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
 				float y_width = uv_detector.box3Ds[i].y_width / 1000.;
 				float z_width = uv_detector.box3Ds[i].z_width / 1000.;
+
+				if (x_width>1.2 || y_width>1.2 || z_width>2.0) {
+					continue;
+				}
+				if (x_width<0.3 || y_width<0.3 && z_width<1.0) {
+					continue;
+				}
 				
 				vector<geometry_msgs::Point> verts;
 				geometry_msgs::Point p;
@@ -298,6 +318,20 @@ class my_detector
 			listener.lookupTransform("map","camera_link",point_camera.header.stamp,transform);
 			for(int i = 0; i < this->uv_detector.box3Ds.size(); i++)
 			{   
+				float x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
+				float y = uv_detector.box3Ds[i].y / 1000.;
+				float z = uv_detector.box3Ds[i].z / 1000.;
+
+				float x_width = uv_detector.box3Ds[i].x_width / 1000.; // convert from mm to m
+				float y_width = uv_detector.box3Ds[i].y_width / 1000.;
+				float z_width = uv_detector.box3Ds[i].z_width / 1000.;
+
+				if (x_width>1.2 || y_width>1.2 || z_width>2.0) {
+					continue;
+				}
+				if (x_width<0.3 || y_width<0.3 && z_width<1.0) {
+					continue;
+				}
 				marker.lifetime = ros::Duration(0.05);
 				marker.pose.position.x = uv_detector.box3Ds[i].x / 1000.; // convert from mm to m
 				marker.pose.position.y = uv_detector.box3Ds[i].y / 1000.;
